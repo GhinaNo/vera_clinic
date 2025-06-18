@@ -240,6 +240,10 @@ class _DepartmentsPageState extends State<DepartmentsPage> {
                         '/departments/edit',
                         extra: department,
                       );
+                      final confirm = await _showConfirmDialog(
+                        'تأكيد التغييرات',
+                        'هل أنت متأكد من حفظ هذه التغييرات؟',
+                      );
                       if (updated != null) {
                         _updateDepartment(index, updated);
                       }
