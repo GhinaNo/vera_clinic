@@ -13,9 +13,33 @@ class ServicesPage extends StatefulWidget {
 
   @override
   State<ServicesPage> createState() => _ServicesPageState();
+
 }
 
 class _ServicesPageState extends State<ServicesPage> {
+  @override
+  void initState() {
+    super.initState();
+    services.addAll([
+      Service(
+        name: 'تنظيف بشرة عميق',
+        description: 'تنظيف عميق للبشرة باستخدام أجهزة وتقنيات حديثة.',
+        durationMinutes: 90,
+        price: 50000,
+        departmentName: widget.departments.isNotEmpty ? widget.departments.first.name : 'قسم البشرة',
+        imagePath: "C:/Users/Lenovo/Downloads/logo1.png",
+      ),
+      Service(
+        name: 'جلسة ليزر إزالة شعر',
+        description: 'جلسة ليزر لإزالة الشعر بدون ألم.',
+        durationMinutes: 60,
+        price: 80000,
+        departmentName: widget.departments.length > 1 ? widget.departments[1].name : 'قسم الليزر',
+        imagePath: 'https://via.placeholder.com/150',
+      ),
+    ]);
+  }
+
   final List<Service> services = [];
 
   void pickImage(void Function(VoidCallback fn) setStateDialog, void Function(String path) onImagePicked) {
@@ -105,19 +129,20 @@ class _ServicesPageState extends State<ServicesPage> {
                                 validator: (value) => value!.isEmpty ? 'يرجى إدخال المدة' : null,
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.info_outline, color: Colors.grey),
-                              onPressed: () {
-                                showInfoDialog('مثال على المدة', 'يمكنك إدخال "90" (90 دقيقة)، أو "1,30" (ساعة ونصف).');
-                              },
-                            ),
+                            // IconButton(
+                            //   icon: const Icon(Icons.info_outline, color: Colors.grey),
+                            //   onPressed: () {
+                            //     showInfoDialog('مثال على المدة', 'يمكنك إدخال "90" (90 دقيقة)، أو "1,30" (ساعة ونصف).');
+                            //   },
+                            // ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Row(
                           children: [
                             Expanded(
-                              child: TextFormField(
+                              child:
+                              TextFormField(
                                 controller: priceController,
                                 keyboardType: TextInputType.numberWithOptions(decimal: true),
                                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9,،]'))],
@@ -125,14 +150,14 @@ class _ServicesPageState extends State<ServicesPage> {
                                 validator: (value) => value!.isEmpty ? 'يرجى إدخال السعر' : null,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            const Text('ل.س', style: TextStyle(fontWeight: FontWeight.bold)),
-                            IconButton(
-                              icon: const Icon(Icons.info_outline, color: Colors.grey),
-                              onPressed: () {
-                                showInfoDialog('مثال على السعر', 'أدخل السعر مثل: "50000" أو "50,000".');
-                              },
-                            ),
+                            // const SizedBox(width: 8),
+                            // const Text('ل.س', style: TextStyle(fontWeight: FontWeight.bold)),
+                            // IconButton(
+                            //   icon: const Icon(Icons.info_outline, color: Colors.grey),
+                            //   onPressed: () {
+                            //     showInfoDialog('مثال على السعر', 'أدخل السعر مثل: "50000" أو "50,000".');
+                            //   },
+                            // ),
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -194,7 +219,7 @@ class _ServicesPageState extends State<ServicesPage> {
                                 Navigator.pop(context);
                               },
                               style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
-                              child: const Text('إضافة'),
+                              child: const Text('إضافة', style: TextStyle(color: AppColors.offWhite),),
                             )
                           ],
                         )
@@ -250,9 +275,9 @@ class _ServicesPageState extends State<ServicesPage> {
                     TextButton(
                       onPressed: () {
                         setState(() => services.removeAt(index));
-                        Navigator.pop(context); // إغلاق تأكيد الحذف
+                        Navigator.pop(context);
                       },
-                      child: const Text('نعم، احذف', style: TextStyle(color: Colors.red)),
+                      child: const Text(' احذف', style: TextStyle(color: Colors.red)),
                     ),
                   ],
                 ),

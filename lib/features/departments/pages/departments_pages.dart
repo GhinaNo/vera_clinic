@@ -199,18 +199,11 @@ class _DepartmentsPageState extends State<DepartmentsPage> {
             alignment: Alignment.centerRight,
             child: ElevatedButton.icon(
               onPressed: _showAddDialog,
-              icon: const Icon(Icons.add, size: 22),
-              label: const Text('قسم جديد', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                elevation: 3,
-                backgroundColor: AppColors.purple,
-                foregroundColor: Colors.white,
-              ),
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text('قسم جديد', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
             ),
-          ),
-          const SizedBox(height: 20),
+          ),          const SizedBox(height: 20),
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),

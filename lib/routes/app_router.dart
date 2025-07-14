@@ -6,6 +6,7 @@ import 'package:vera_clinic/features/departments/pages/editDepartment_page.dart'
 import 'package:vera_clinic/features/services/pages/service_page.dart';
 import '../features/auth/login_page.dart';
 import '../features/home/dashboard_page.dart';
+import '../features/offers/pages/offers_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -30,6 +31,11 @@ final GoRouter appRouter = GoRouter(
         return EditDepartmentDialog(department: department, onSave: (Department updatedDepartment) {  },);
       },
     ),
+    GoRoute(
+      path: '/offers',
+      builder: (context, state) => const OffersPage(),
+    ),
+
     GoRoute(
       path: '/services',
       name: 'services',

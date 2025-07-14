@@ -3,6 +3,7 @@ import 'package:vera_clinic/features/departments/models/department.dart';
 import 'package:vera_clinic/features/departments/pages/departments_pages.dart';
 import 'package:vera_clinic/features/services/pages/service_page.dart';
 import '../../core/theme/app_theme.dart';
+import '../offers/pages/offers_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -208,6 +209,8 @@ class _DashboardPageState extends State<DashboardPage> {
         );
       case 2:
         return ServicesPage(departments: departments);
+      case 3:
+        return OffersPage();
       default:
         return Center(child: Text('محتوى غير متوفر'));
     }
