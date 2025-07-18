@@ -5,6 +5,7 @@ import 'package:vera_clinic/core/theme/app_theme.dart';
 import 'package:vera_clinic/features/departments/models/department.dart';
 import 'package:vera_clinic/features/services/pages/edit_service_dialog.dart';
 import '../models/service.dart';
+import 'package:intl/intl.dart';
 
 class ServicesPage extends StatefulWidget {
   final List<Department> departments;
@@ -13,7 +14,6 @@ class ServicesPage extends StatefulWidget {
 
   @override
   State<ServicesPage> createState() => _ServicesPageState();
-
 }
 
 class _ServicesPageState extends State<ServicesPage> {
@@ -63,25 +63,21 @@ class _ServicesPageState extends State<ServicesPage> {
   void _showAddServiceDialog() {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController();
-    final durationController = TextEditingController();
     final priceController = TextEditingController();
     final descriptionController = TextEditingController();
     String? selectedDepartment;
     String? selectedImagePath;
+    int? selectedDurationMinutes;
 
-    void showInfoDialog(String title, String message) {
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: Text(title),
-          content: Text(message),
-          actions: [
-            TextButton(
-              child: const Text('حسناً'),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
-        ),
+    final numberFormat = NumberFormat("#,###", "ar");
+
+    void formatPrice() {
+      final text = priceController.text.replaceAll(RegExp(r'[^\d]'), '');
+      if (text.isEmpty) return;
+      final number = int.parse(text);
+      priceController.value = TextEditingValue(
+        text: numberFormat.format(number),
+        selection: TextSelection.collapsed(offset: numberFormat.format(number).length),
       );
     }
 
@@ -118,47 +114,26 @@ class _ServicesPageState extends State<ServicesPage> {
                           validator: (value) => value!.isEmpty ? 'يرجى إدخال الوصف' : null,
                         ),
                         const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: durationController,
-                                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9,،]'))],
-                                decoration: _inputDecoration('المدة (بالدقائق)'),
-                                validator: (value) => value!.isEmpty ? 'يرجى إدخال المدة' : null,
-                              ),
-                            ),
-                            // IconButton(
-                            //   icon: const Icon(Icons.info_outline, color: Colors.grey),
-                            //   onPressed: () {
-                            //     showInfoDialog('مثال على المدة', 'يمكنك إدخال "90" (90 دقيقة)، أو "1,30" (ساعة ونصف).');
-                            //   },
-                            // ),
-                          ],
+                        DropdownButtonFormField<int>(
+                          decoration: _inputDecoration('المدة'),
+                          value: selectedDurationMinutes,
+                          items: [30, 45, 60, 90, 120].map((minutes) {
+                            return DropdownMenuItem(
+                              value: minutes,
+                              child: Text('$minutes دقيقة'),
+                            );
+                          }).toList(),
+                          onChanged: (value) => setStateDialog(() => selectedDurationMinutes = value),
+                          validator: (value) => value == null ? 'يرجى اختيار المدة' : null,
                         ),
                         const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child:
-                              TextFormField(
-                                controller: priceController,
-                                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9,،]'))],
-                                decoration: _inputDecoration('السعر'),
-                                validator: (value) => value!.isEmpty ? 'يرجى إدخال السعر' : null,
-                              ),
-                            ),
-                            // const SizedBox(width: 8),
-                            // const Text('ل.س', style: TextStyle(fontWeight: FontWeight.bold)),
-                            // IconButton(
-                            //   icon: const Icon(Icons.info_outline, color: Colors.grey),
-                            //   onPressed: () {
-                            //     showInfoDialog('مثال على السعر', 'أدخل السعر مثل: "50000" أو "50,000".');
-                            //   },
-                            // ),
-                          ],
+                        TextFormField(
+                          controller: priceController,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('السعر').copyWith(suffixText: 'ل.س'),
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          onChanged: (value) => formatPrice(),
+                          validator: (value) => value!.isEmpty ? 'يرجى إدخال السعر' : null,
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
@@ -202,27 +177,23 @@ class _ServicesPageState extends State<ServicesPage> {
                             ElevatedButton(
                               onPressed: () {
                                 if (!formKey.currentState!.validate() || selectedImagePath == null) return;
-
-                                final cleanedPrice = priceController.text.replaceAll(RegExp(r'[,\،]'), '');
-                                final cleanedDuration = durationController.text.replaceAll(RegExp(r'[,\،]'), '');
-
+                                final cleanedPrice = priceController.text.replaceAll(RegExp(r'[^\d]'), '');
                                 final newService = Service(
                                   name: nameController.text.trim(),
                                   description: descriptionController.text.trim(),
-                                  durationMinutes: int.tryParse(cleanedDuration) ?? 0,
+                                  durationMinutes: selectedDurationMinutes!,
                                   price: double.tryParse(cleanedPrice) ?? 0.0,
                                   departmentName: selectedDepartment!,
                                   imagePath: selectedImagePath!,
                                 );
-
                                 setState(() => services.add(newService));
                                 Navigator.pop(context);
                               },
                               style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
-                              child: const Text('إضافة', style: TextStyle(color: AppColors.offWhite),),
-                            )
+                              child: const Text('إضافة', style: TextStyle(color: AppColors.offWhite)),
+                            ),
                           ],
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -265,7 +236,6 @@ class _ServicesPageState extends State<ServicesPage> {
               showDialog(
                 context: context,
                 builder: (_) => AlertDialog(
-                  title: const Text('تأكيد الحذف'),
                   content: const Text('هل أنت متأكد أنك تريد حذف هذه الخدمة؟'),
                   actions: [
                     TextButton(
@@ -274,10 +244,11 @@ class _ServicesPageState extends State<ServicesPage> {
                     ),
                     TextButton(
                       onPressed: () {
-                        setState(() => services.removeAt(index));
                         Navigator.pop(context);
+                        Navigator.pop(context);
+                        setState(() => services.removeAt(index));
                       },
-                      child: const Text(' احذف', style: TextStyle(color: Colors.red)),
+                      child: const Text('احذف', style: TextStyle(color: Colors.red)),
                     ),
                   ],
                 ),
@@ -298,11 +269,11 @@ class _ServicesPageState extends State<ServicesPage> {
     showDialog(
       context: context,
       builder: (context) => EditServiceDialog(
-        oldService: oldService ,
+        oldService: oldService,
         departments: widget.departments,
         onSave: (updatedService) {
           setState(() {
-            services[index] = updatedService ;
+            services[index] = updatedService;
           });
           Navigator.pop(context);
         },
@@ -349,7 +320,8 @@ class _ServicesPageState extends State<ServicesPage> {
                     leading: Image.network(s.imagePath, width: 50, height: 50, fit: BoxFit.cover),
                     title: Text(s.name),
                     subtitle: Text(
-                        'المدة: ${s.durationMinutes} دقيقة | السعر: ${s.price} ليرة سورية\nالقسم: ${s.departmentName}'),
+                      'المدة: ${s.durationMinutes} دقيقة | السعر: ${s.price} ليرة سورية\nالقسم: ${s.departmentName}',
+                    ),
                     onTap: () => _showServiceDetailsDialog(s, index),
                   ),
                 );

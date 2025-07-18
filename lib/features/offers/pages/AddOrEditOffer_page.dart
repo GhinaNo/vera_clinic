@@ -2,7 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../services/models/service.dart';
 import '../model/offersModel.dart';
+
+final dummyServices = [
+  Service(
+    name: 'تنظيف بشرة',
+    description: 'تنظيف عميق للبشرة',
+    durationMinutes: 60,
+    price: 50000,
+    departmentName: 'العناية بالبشرة',
+    imagePath: '',
+  ),
+  Service(
+    name: 'ليزر كامل',
+    description: 'جلسة ليزر كاملة',
+    durationMinutes: 90,
+    price: 80000,
+    departmentName: 'الليزر',
+    imagePath: '',
+  ),
+];
 
 class AddOrEditOfferPage extends StatefulWidget {
   final Offer? offer;
@@ -19,6 +39,8 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> {
   DateTime? startDate;
   DateTime? endDate;
 
+  List<String> selectedServiceNames = [];
+
   @override
   void initState() {
     super.initState();
@@ -27,6 +49,7 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> {
       discountController.text = widget.offer!.discountPercent.toString();
       startDate = widget.offer!.startDate;
       endDate = widget.offer!.endDate;
+      selectedServiceNames = List.from(widget.offer!.serviceIds);
     }
   }
 
@@ -76,7 +99,7 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> {
               backgroundColor: AppColors.purple,
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('تأكيد', style: TextStyle(color: AppColors.offWhite),),
+            child: const Text('تأكيد', style: TextStyle(color: AppColors.offWhite)),
           ),
         ],
       ),
@@ -104,7 +127,7 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> {
         discountPercent: double.tryParse(discountController.text) ?? 0,
         startDate: startDate ?? DateTime.now(),
         endDate: endDate ?? DateTime.now(),
-        serviceIds: [],
+        serviceIds: selectedServiceNames,
       );
       Navigator.pop(context, newOffer);
     }
@@ -112,6 +135,8 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> {
 
   @override
   Widget build(BuildContext context) {
+    final discount = double.tryParse(discountController.text) ?? 0;
+
     return Scaffold(
       appBar: AppBar(title: Text(widget.offer == null ? 'إضافة عرض' : 'تعديل عرض')),
       body: SingleChildScrollView(
@@ -130,13 +155,12 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> {
             TextField(
               controller: discountController,
               keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               decoration: const InputDecoration(
                 labelText: 'نسبة الخصم %',
                 border: OutlineInputBorder(),
               ),
+              onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 12),
             Row(
@@ -178,15 +202,38 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            Text('الخدمات المرتبطة بالعرض:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            ...dummyServices.map((service) {
+              final isSelected = selectedServiceNames.contains(service.name);
+              final discountedPrice = service.price * (1 - discount / 100);
+              return CheckboxListTile(
+                title: Text(service.name),
+                subtitle: Text(
+                  'السعر: ${service.price.toInt()} ل.س - بعد الحسم: ${discountedPrice.toInt()} ل.س',
+                  style: const TextStyle(fontSize: 13),
+                ),
+                value: isSelected,
+                onChanged: (value) {
+                  setState(() {
+                    if (value == true) {
+                      selectedServiceNames.add(service.name);
+                    } else {
+                      selectedServiceNames.remove(service.name);
+                    }
+                  });
+                },
+              );
+            }).toList(),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.purple,
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
                 onPressed: _saveOffer,
-                child: Text(widget.offer == null ? 'إضافة العرض' : 'حفظ التعديلات' , style: TextStyle(color: AppColors.offWhite),),
+                child: Text(widget.offer == null ? 'إضافة العرض' : 'حفظ التعديلات',
+                    style: TextStyle(color: AppColors.offWhite)),
               ),
             ),
           ],

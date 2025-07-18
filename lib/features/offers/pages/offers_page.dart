@@ -49,11 +49,11 @@ class _OffersPageState extends State<OffersPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء',style: TextStyle(color: AppColors.offWhite)),
+            child: const Text('إلغاء',style: TextStyle(color: AppColors.purple)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('تأكيد', style: TextStyle(color: AppColors.offWhite),),
+            child: const Text('تأكيد', style: TextStyle(color: Colors.red),),
           ),
         ],
       ),

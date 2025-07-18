@@ -3,7 +3,7 @@ class Offer {
   final double discountPercent;
   final DateTime startDate;
   final DateTime endDate;
-  final List<String> serviceIds; // IDs للخدمات يلي يشملها العرض
+  final List<String> serviceIds;
 
   Offer({
     required this.title,

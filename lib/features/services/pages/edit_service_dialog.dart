@@ -1,9 +1,10 @@
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:vera_clinic/core/widgets/edit_form_dialog.dart';
 import 'package:vera_clinic/features/departments/models/department.dart';
 import 'package:vera_clinic/features/services/models/service.dart';
-
 
 class EditServiceDialog extends StatefulWidget {
   final Service oldService;
@@ -25,22 +26,32 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
   final formKey = GlobalKey<FormState>();
   late TextEditingController nameController;
   late TextEditingController descriptionController;
-  late TextEditingController durationController;
-  late TextEditingController priceController;
   String? selectedDepartment;
   String? selectedImagePath;
+  int? selectedDuration; // استخدمنا بدل TextField للمدة
 
+  final priceController = TextEditingController();
+  final numberFormat = NumberFormat("#,###", "ar");
   @override
   void initState() {
     super.initState();
     nameController = TextEditingController(text: widget.oldService.name);
     descriptionController = TextEditingController(text: widget.oldService.description);
-    durationController = TextEditingController(text: widget.oldService.durationMinutes.toString());
-    priceController = TextEditingController(text: widget.oldService.price.toString());
+    priceController.text = numberFormat.format(widget.oldService.price.toInt());
     selectedDepartment = widget.oldService.departmentName;
     selectedImagePath = widget.oldService.imagePath;
+    selectedDuration = widget.oldService.durationMinutes;
   }
-
+  void formatPrice() {
+    final text = priceController.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (text.isEmpty) return;
+    final number = int.parse(text);
+    final newText = numberFormat.format(number);
+    priceController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newText.length),
+    );
+  }
   void pickImage(void Function(VoidCallback fn) setStateDialog, void Function(String path) onImagePicked) {
     final uploadInput = html.FileUploadInputElement()..accept = 'image/*';
     uploadInput.click();
@@ -78,12 +89,14 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
             onCancel: () => Navigator.pop(context),
             onSave: () {
               if (!formKey.currentState!.validate()) return;
+              final cleanedPrice = priceController.text.replaceAll(RegExp(r'[^\d]'), '');
 
               final updatedService = Service(
+
                 name: nameController.text,
                 description: descriptionController.text,
-                durationMinutes: int.tryParse(durationController.text) ?? 0,
-                price: double.tryParse(priceController.text) ?? 0.0,
+                durationMinutes: selectedDuration ?? 0,
+                price: double.tryParse(cleanedPrice) ?? 0.0,
                 departmentName: selectedDepartment!,
                 imagePath: selectedImagePath ?? '',
               );
@@ -103,17 +116,28 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
                 validator: (value) => value!.isEmpty ? 'يرجى إدخال الوصف' : null,
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: durationController,
-                decoration: _inputDecoration('المدة'),
-                validator: (value) => value!.isEmpty ? 'يرجى إدخال المدة' : null,
+              DropdownButtonFormField<int>(
+                value: selectedDuration,
+                decoration: _inputDecoration('المدة بالدقائق'),
+                items: [15, 30, 45, 60, 90, 120].map((minutes) {
+                  return DropdownMenuItem(
+                    value: minutes,
+                    child: Text('$minutes دقيقة'),
+                  );
+                }).toList(),
+                onChanged: (value) => setStateDialog(() => selectedDuration = value),
+                validator: (value) => value == null ? 'يرجى اختيار المدة' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: priceController,
-                decoration: _inputDecoration('السعر'),
+                keyboardType: TextInputType.number,
+                decoration: _inputDecoration('السعر').copyWith(suffixText: 'ل.س'),
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onChanged: (value) => formatPrice(),
                 validator: (value) => value!.isEmpty ? 'يرجى إدخال السعر' : null,
               ),
+
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: selectedDepartment,
