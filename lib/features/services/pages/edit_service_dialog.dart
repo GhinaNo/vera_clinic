@@ -28,7 +28,7 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
   late TextEditingController descriptionController;
   String? selectedDepartment;
   String? selectedImagePath;
-  int? selectedDuration; // استخدمنا بدل TextField للمدة
+  int? selectedDuration;
 
   final priceController = TextEditingController();
   final numberFormat = NumberFormat("#,###", "ar");
@@ -98,7 +98,7 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
                 durationMinutes: selectedDuration ?? 0,
                 price: double.tryParse(cleanedPrice) ?? 0.0,
                 departmentName: selectedDepartment!,
-                imagePath: selectedImagePath ?? '',
+                imagePath: selectedImagePath ?? '', id: '',
               );
 
               widget.onSave(updatedService);

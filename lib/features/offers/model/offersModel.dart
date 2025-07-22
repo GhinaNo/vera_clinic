@@ -1,4 +1,5 @@
 class Offer {
+  final String id;
   final String title;
   final double discountPercent;
   final DateTime startDate;
@@ -6,6 +7,7 @@ class Offer {
   final List<String> serviceIds;
 
   Offer({
+    required this.id,
     required this.title,
     required this.discountPercent,
     required this.startDate,

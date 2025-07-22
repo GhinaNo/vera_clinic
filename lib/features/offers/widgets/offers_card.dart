@@ -58,11 +58,11 @@ class OfferCard extends StatelessWidget {
                   ),
                 ),
                 if (offer.serviceIds.isNotEmpty) const SizedBox(height: 6),
-                if (offer.serviceIds.isNotEmpty)
-                  Text(
-                    'يشمل: ${offer.serviceIds.join(", ")}',
-                    style: const TextStyle(fontSize: 13, color: Colors.black87),
-                  ),
+                // if (offer.serviceIds.isNotEmpty)
+                //   Text(
+                //     'يشمل: ${offer.serviceIds.join(", ")}',
+                //     style: const TextStyle(fontSize: 13, color: Colors.black87),
+                //   ),
               ],
             ),
           ),
