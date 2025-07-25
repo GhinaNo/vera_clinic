@@ -5,6 +5,8 @@ import 'package:vera_clinic/features/departments/pages/departments_pages.dart';
 import 'package:vera_clinic/features/services/pages/service_page.dart';
 import '../../core/theme/app_theme.dart';
 import '../departments/cubit/departments_cubit.dart';
+import '../invoices/cubit/invoices_cubit.dart';
+import '../invoices/pages/invoices_list_page.dart';
 import '../offers/cubit/offer_cubit.dart';
 import '../offers/pages/offers_page.dart';
 import '../services/cubit/ServicesCubit.dart';
@@ -46,12 +48,12 @@ class _DashboardPageState extends State<DashboardPage> {
     'الأقسام',
     'الخدمات',
     'العروض',
-    'الموظفون',
+    'المحاسبة',
     'الزبائن',
     'المواعيد',
     'الحجوزات',
     'الإدارة',
-    'المحاسبة',
+    'الموظفون',
     'الإشعارات',
   ];
 
@@ -60,12 +62,12 @@ class _DashboardPageState extends State<DashboardPage> {
     Icons.category_outlined,
     Icons.medical_services_outlined,
     Icons.local_offer_outlined,
-    Icons.people_alt_outlined,
+    Icons.account_balance_wallet_outlined,
     Icons.person_outline,
     Icons.calendar_month_outlined,
     Icons.book_online_outlined,
     Icons.manage_accounts_outlined,
-    Icons.account_balance_wallet_outlined,
+    Icons.people_alt_outlined,
     Icons.notifications_outlined,
   ];
 
@@ -83,7 +85,10 @@ class _DashboardPageState extends State<DashboardPage> {
           create: (_) => ServicesCubit(),
         ),
         BlocProvider(
-          create: (_) => OffersCubit(),  // <=== أضف هذا
+          create: (_) => OffersCubit(),
+        ),
+        BlocProvider(
+          create: (_) => InvoicesCubit(),
         ),
       ],
       child: Scaffold(
@@ -311,13 +316,14 @@ class _DashboardPageState extends State<DashboardPage> {
         DepartmentsPage(),
         ServicesPage(departments: departments),
         OffersPage(),
+        InvoicesListPage(),
         Center(child: Text('محتوى غير متوفر')),
-        Center(child: Text('الموظفون')),
+        Center(child: Text('المحاسبة')),
         Center(child: Text('الزبائن')),
         Center(child: Text('المواعيد')),
         Center(child: Text('الحجوزات')),
         Center(child: Text('الإدارة')),
-        Center(child: Text('المحاسبة')),
+        Center(child: Text('الموظفون')),
         Center(child: Text('الإشعارات')),
       ],
     );

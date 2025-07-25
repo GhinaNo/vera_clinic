@@ -1,6 +1,6 @@
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:vera_clinic/core/widgets/edit_form_dialog.dart';
 import 'package:vera_clinic/features/departments/models/department.dart';
@@ -52,23 +52,15 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
       selection: TextSelection.collapsed(offset: newText.length),
     );
   }
-  void pickImage(void Function(VoidCallback fn) setStateDialog, void Function(String path) onImagePicked) {
-    final uploadInput = html.FileUploadInputElement()..accept = 'image/*';
-    uploadInput.click();
-    uploadInput.onChange.listen((e) {
-      final file = uploadInput.files?.first;
-      if (file != null) {
-        final reader = html.FileReader();
-        reader.readAsDataUrl(file);
-        reader.onLoadEnd.listen((e) {
-          setStateDialog(() {
-            onImagePicked(reader.result as String);
-          });
-        });
-      }
-    });
+  void pickImage(void Function(VoidCallback fn) setStateDialog, void Function(String path) onImagePicked) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setStateDialog(() {
+        onImagePicked(image.path);
+      });
+    }
   }
-
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
