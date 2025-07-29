@@ -1,4 +1,4 @@
-import 'package:bloc/bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../model/offersModel.dart';
 import 'offer_state.dart';
 
@@ -10,24 +10,24 @@ class OffersCubit extends Cubit<OffersState> {
   }
 
   void addOffer(Offer offer) {
-    final updated = List<Offer>.from(state.offers)..add(offer);
-    emit(state.copyWith(offers: updated));
+    final updatedList = List<Offer>.from(state.offers)..add(offer);
+    emit(state.copyWith(offers: updatedList));
   }
 
   void updateOffer(Offer updatedOffer) {
-    final updated = state.offers.map((offer) {
-      if (offer.id == updatedOffer.id) {
-        return updatedOffer;
-      }
-      return offer;
+    final updatedList = state.offers.map((offer) {
+      return offer.id == updatedOffer.id ? updatedOffer : offer;
     }).toList();
-    emit(state.copyWith(offers: updated));
+
+    emit(state.copyWith(offers: updatedList));
   }
 
-
   void deleteOffer(Offer offerToDelete) {
-    final updated = state.offers.where((o) => o.title != offerToDelete.title).toList();
-    emit(state.copyWith(offers: updated));
+    final updatedList = state.offers
+        .where((offer) => offer.id != offerToDelete.id)
+        .toList();
+
+    emit(state.copyWith(offers: updatedList));
   }
 
   void setFilter(OffersFilter filter) {

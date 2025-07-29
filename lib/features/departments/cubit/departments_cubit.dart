@@ -5,21 +5,29 @@ class DepartmentsCubit extends Cubit<List<Department>> {
   DepartmentsCubit() : super([]);
 
   void addDepartment(Department department) {
-    final updated = List<Department>.from(state)..add(department);
-    emit(updated);
+    final currentDepartments = List<Department>.from(state);
+    currentDepartments.add(department);
+    emit(currentDepartments);
   }
 
-  void updateDepartment(int index, Department department) {
-    final updated = List<Department>.from(state)..[index] = department;
-    emit(updated);
+  void updateDepartment(int index, Department updatedDepartment) {
+    final updatedList = List<Department>.from(state);
+    if (index >= 0 && index < updatedList.length) {
+      updatedList[index] = updatedDepartment;
+      emit(updatedList);
+    }
   }
 
   void removeDepartment(int index) {
-    final updated = List<Department>.from(state)..removeAt(index);
-    emit(updated);
+    final updatedList = List<Department>.from(state);
+    if (index >= 0 && index < updatedList.length) {
+      updatedList.removeAt(index);
+      emit(updatedList);
+    }
   }
 
+  // تحميل بيانات أولية عند بدء التطبيق أو التهيئة
   void loadInitial(List<Department> departments) {
-    emit(departments);
+    emit(List<Department>.from(departments));
   }
 }

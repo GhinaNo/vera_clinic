@@ -15,9 +15,9 @@ class OffersState {
     final now = DateTime.now();
     switch (filter) {
       case OffersFilter.active:
-        return offers.where((o) => o.endDate.isAfter(now)).toList();
+        return offers.where((offer) => offer.endDate.isAfter(now)).toList();
       case OffersFilter.expired:
-        return offers.where((o) => !o.endDate.isAfter(now)).toList();
+        return offers.where((offer) => offer.endDate.isBefore(now)).toList();
       case OffersFilter.all:
       default:
         return offers;

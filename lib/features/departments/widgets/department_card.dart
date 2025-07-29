@@ -4,8 +4,8 @@ import '../models/department.dart';
 
 class DepartmentCard extends StatelessWidget {
   final Department department;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final Future<void> Function() onEdit;
+  final Future<void> Function() onDelete;
 
   const DepartmentCard({
     super.key,
@@ -13,6 +13,100 @@ class DepartmentCard extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
   });
+
+  void _showDetailsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.offWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          department.name,
+          style: TextStyle(
+            color: AppColors.purple,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+          textAlign: TextAlign.right,
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildDetailRow(Icons.person_outline, 'الطبيب المشرف', department.supervisor),
+              const SizedBox(height: 10),
+              _buildDetailRow(Icons.location_on_outlined, 'رقم الجناح', department.location),
+              const SizedBox(height: 15),
+              Text(
+                'حول هذا القسم:',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                  color: AppColors.purple,
+                ),
+                textAlign: TextAlign.right,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                department.description,
+                textAlign: TextAlign.right,
+                style: TextStyle(fontSize: 15, color: Colors.grey.shade800),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // إغلاق الديالوج
+              await onDelete();
+            },
+            child: Text(
+              'حذف',
+              style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // إغلاق الديالوج
+              await onEdit();
+            },
+            child: Text(
+              'تعديل',
+              style: TextStyle(color: AppColors.purple, fontWeight: FontWeight.bold),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('إغلاق', style: TextStyle(color: AppColors.purple)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.purple),
+        const SizedBox(width: 10),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: AppColors.purple,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontWeight: FontWeight.normal),
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,203 +130,39 @@ class DepartmentCard extends StatelessWidget {
               end: Alignment.bottomRight,
             ),
           ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  department.name,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: 0.8,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 14),
-
-                Row(
-                  children: [
-                    const Icon(Icons.person_outline, color: Colors.white70, size: 22),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        department.supervisor,
-                        style: const TextStyle(color: Colors.white70, fontSize: 16),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                Row(
-                  children: [
-                    const Icon(Icons.meeting_room_outlined, color: Colors.white70, size: 22),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        department.location,
-                        style: const TextStyle(color: Colors.white70, fontSize: 16),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                Container(
-                  constraints: const BoxConstraints(
-                    maxHeight: 100,
-                  ),
-                  child: SingleChildScrollView(
-                    child: Text(
-                      department.description,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 15,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showDetailsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: AppColors.offWhite,
-        title: Row(
-          children: [
-            const Icon(Icons.apartment, color: AppColors.purple, size: 28),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
                 department.name,
                 style: const TextStyle(
-                  color: AppColors.purple,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: 0.8,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
-        ),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxHeight: 350,
-            minWidth: 280,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildInfoTile('الطبيب المشرف', department.supervisor, Icons.person_outline),
-                _buildInfoTile('رقم الجناح', department.location, Icons.meeting_room_outlined),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.info_outline, size: 24, color: AppColors.purple.withOpacity(0.9)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          constraints: const BoxConstraints(
-                            maxHeight: 150,
-                          ),
-                          child: SingleChildScrollView(
-                            child: Text(
-                              'حول هذا القسم: ${department.description}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.purple,
-                                fontSize: 16,
-                                height: 1.3,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق', style: TextStyle(color: AppColors.purple, fontSize: 16)),
-          ),
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Future.microtask(onEdit);
-            },
-            icon: const Icon(Icons.edit, color: AppColors.purple, size: 26),
-            tooltip: 'تعديل',
-          ),
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Future.microtask(onDelete);
-            },
-            icon: const Icon(Icons.delete_forever, color: Colors.redAccent, size: 26),
-            tooltip: 'حذف',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoTile(String label, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 24, color: AppColors.purple.withOpacity(0.9)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                text: '$label: ',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.purple,
-                  fontSize: 16,
-                ),
+              const SizedBox(height: 14),
+              Row(
                 children: [
-                  TextSpan(
-                    text: value,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.normal,
-                      color: Colors.black87,
-                      fontSize: 16,
-                      height: 1.3,
+                  const Icon(Icons.person_outline, color: Colors.white70, size: 22),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      department.supervisor,
+                      style: const TextStyle(color: Colors.white70, fontSize: 16),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  )
+                  ),
                 ],
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

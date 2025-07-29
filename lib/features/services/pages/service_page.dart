@@ -80,7 +80,7 @@ class ServicesPage extends StatelessWidget {
                         DropdownButtonFormField<int>(
                           decoration: _inputDecoration('المدة'),
                           value: selectedDurationMinutes,
-                          items: [30, 45, 60, 90, 120].map((minutes) {
+                          items: [15,30, 45, 60, 90, 120].map((minutes) {
                             return DropdownMenuItem(
                               value: minutes,
                               child: Text('$minutes دقيقة'),
