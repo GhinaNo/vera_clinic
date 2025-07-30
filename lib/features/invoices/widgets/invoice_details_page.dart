@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 import '../cubit/invoices_cubit.dart';
 import '../models/invoice_model.dart';
 import '../models/payment.dart';
+import '../../../core/theme/app_theme.dart';
 
 class InvoiceDetailsPage extends StatefulWidget {
   final Invoice invoice;
@@ -16,6 +18,7 @@ class InvoiceDetailsPage extends StatefulWidget {
 
 class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
   late Invoice invoice;
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
 
   @override
   void initState() {
@@ -31,7 +34,8 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
 
     if (result != null) {
       setState(() {
-        invoice.payments.add(result);
+        invoice.payments.insert(0, result);
+        _listKey.currentState?.insertItem(0);
       });
 
       context.read<InvoicesCubit>().updateInvoice(invoice);
@@ -45,7 +49,7 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
         children: [
           Text(
             '$label: ',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.purple),
           ),
           Expanded(
             child: Text(
@@ -61,24 +65,36 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
 
   Widget _buildServiceItem(int index) {
     final item = invoice.items[index];
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            child: Text(
-              item.serviceName,
-              style: const TextStyle(fontSize: 15),
-              overflow: TextOverflow.ellipsis,
+    return AnimationConfiguration.staggeredList(
+      position: index,
+      duration: const Duration(milliseconds: 400),
+      child: SlideAnimation(
+        horizontalOffset: 40.0,
+        child: FadeInAnimation(
+          child: Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 2,
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              title: Text(item.serviceName, style: const TextStyle(fontSize: 15)),
+              trailing: Text(
+                '${item.price.toStringAsFixed(2)} ل.س',
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.purple),
+              ),
             ),
           ),
-          Text(
-            '${item.price.toStringAsFixed(2)} ل.س',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-          ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildPaymentTile(Payment p) {
+    final date = '${p.date.year}/${p.date.month.toString().padLeft(2, '0')}/${p.date.day.toString().padLeft(2, '0')}';
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const Icon(Icons.payments, color: Colors.green),
+      title: Text('${p.amount.toStringAsFixed(2)} ل.س', style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: Text('بتاريخ: $date'),
     );
   }
 
@@ -90,86 +106,80 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
       appBar: AppBar(
         title: const Text('تفاصيل الفاتورة'),
         centerTitle: true,
+        backgroundColor: AppColors.purple,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildInfoRow('العميل', invoice.customerName),
-            _buildInfoRow('التاريخ', dateStr),
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildInfoRow('العميل', invoice.customerName),
+              _buildInfoRow('التاريخ', dateStr),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
+              const Text('الخدمات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.purple)),
+              const SizedBox(height: 10),
 
-            const Text(
-              'الخدمات',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.right,
-            ),
-
-            const SizedBox(height: 10),
-
-            Expanded(
-              child: ListView.builder(
-                itemCount: invoice.items.length,
-                itemBuilder: (context, index) => _buildServiceItem(index),
+              AnimationLimiter(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: invoice.items.length,
+                  itemBuilder: (context, index) => _buildServiceItem(index),
+                ),
               ),
-            ),
 
-            const Divider(height: 30, thickness: 1.2),
+              const Divider(height: 30, thickness: 1.2),
 
-            _buildInfoRow('إجمالي الفاتورة', '${invoice.totalAmount.toStringAsFixed(2)} ل.س'),
-            _buildInfoRow('المدفوع', '${invoice.paidAmount.toStringAsFixed(2)} ل.س'),
-            _buildInfoRow(
-              'المتبقي',
-              '${invoice.remainingAmount.toStringAsFixed(2)} ل.س',
-              valueColor: invoice.remainingAmount > 0 ? Colors.red : Colors.green,
-            ),
-
-            const SizedBox(height: 20),
-            if (invoice.payments.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const Text(
-                'سجل الدفعات',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.right,
+              _buildInfoRow('إجمالي الفاتورة', '${invoice.totalAmount.toStringAsFixed(2)} ل.س'),
+              _buildInfoRow('المدفوع', '${invoice.paidAmount.toStringAsFixed(2)} ل.س'),
+              _buildInfoRow(
+                'المتبقي',
+                '${invoice.remainingAmount.toStringAsFixed(2)} ل.س',
+                valueColor: invoice.remainingAmount > 0 ? Colors.red : Colors.green,
               ),
-              const SizedBox(height: 8),
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: invoice.payments.length,
-                separatorBuilder: (_, __) => const Divider(height: 8),
-                itemBuilder: (context, index) {
-                  final p = invoice.payments[index];
-                  final date = '${p.date.year}/${p.date.month.toString().padLeft(2, '0')}/${p.date.day.toString().padLeft(2, '0')}';
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.payments, color: Colors.teal),
-                    title: Text('${p.amount.toStringAsFixed(2)} ل.س', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('بتاريخ: $date'),
-                  );
-                },
+
+              const SizedBox(height: 20),
+              if (invoice.payments.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const Text('سجل الدفعات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.purple)),
+                const SizedBox(height: 8),
+                AnimatedList(
+                  key: _listKey,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  initialItemCount: invoice.payments.length,
+                  itemBuilder: (context, index, animation) {
+                    return SizeTransition(
+                      sizeFactor: animation,
+                      child: _buildPaymentTile(invoice.payments[index]),
+                    );
+                  },
+                ),
+              ],
+
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                label: const Text('إضافة دفعة', style: TextStyle(color: AppColors.offWhite)),
+                onPressed: invoice.remainingAmount > 0 ? _addPayment : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.purple,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  textStyle: const TextStyle(fontSize: 18),
+                ),
+                icon: const Icon(Icons.add, color: AppColors.offWhite),
               ),
             ],
-
-
-            ElevatedButton.icon(
-              icon: const Icon(Icons.add),
-              label: const Text('إضافة دفعة'),
-              onPressed: invoice.remainingAmount > 0 ? _addPayment : null,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                textStyle: const TextStyle(fontSize: 18),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
+// Dialog for adding payment
 class AddPaymentDialog extends StatefulWidget {
   final double maxAmount;
 
@@ -200,7 +210,8 @@ class _AddPaymentDialogState extends State<AddPaymentDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('إضافة دفعة'),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('إضافة دفعة', style: TextStyle(color: AppColors.purple)),
       content: Form(
         key: _formKey,
         child: TextFormField(
@@ -208,6 +219,7 @@ class _AddPaymentDialogState extends State<AddPaymentDialog> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
             labelText: 'المبلغ (أقل من ${widget.maxAmount.toStringAsFixed(2)})',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           ),
           validator: (value) {
             if (value == null || value.isEmpty) {
@@ -226,7 +238,11 @@ class _AddPaymentDialogState extends State<AddPaymentDialog> {
       ),
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('إلغاء')),
-        ElevatedButton(onPressed: _submit, child: const Text('حفظ')),
+        ElevatedButton(
+          onPressed: _submit,
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
+          child: const Text('حفظ', style: TextStyle(color: AppColors.offWhite)),
+        ),
       ],
     );
   }

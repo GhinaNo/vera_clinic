@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../cubit/invoices_cubit.dart';
 import '../models/invoice_model.dart';
@@ -25,6 +26,7 @@ class _InvoiceListViewState extends State<InvoiceListView> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // Search + Sort bar
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
@@ -39,8 +41,6 @@ class _InvoiceListViewState extends State<InvoiceListView> {
                     ),
                     filled: true,
                     fillColor: Colors.grey[100],
-                    contentPadding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
                   ),
                   onChanged: (value) {
                     setState(() {
@@ -88,6 +88,8 @@ class _InvoiceListViewState extends State<InvoiceListView> {
             ],
           ),
         ),
+
+        // Invoices List
         Expanded(
           child: BlocBuilder<InvoicesCubit, List<Invoice>>(
             builder: (context, invoices) {
@@ -103,98 +105,43 @@ class _InvoiceListViewState extends State<InvoiceListView> {
                 });
 
               if (filtered.isEmpty) {
-                return const Center(child: Text('لا توجد فواتير بعد.'));
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset('assets/images/No_data.gif', height: 250, width: 200),
+                    const SizedBox(height: 16),
+                    const Text('لا توجد فواتير حتى الآن',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                  ],
+                );
               }
 
-              return ListView.separated(
-                padding: const EdgeInsets.all(12),
-                itemCount: filtered.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (context, index) {
-                  final invoice = filtered[index];
+              return AnimationLimiter(
+                key: ValueKey(
+                  filtered.length.toString() +
+                      searchQuery +
+                      sortByAmount.toString() +
+                      ascending.toString(),
+                ),
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: filtered.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final invoice = filtered[index];
 
-                  return TweenAnimationBuilder<double>(
-                    key: ValueKey(invoice.id),
-                    duration: const Duration(milliseconds: 300),
-                    tween: Tween<double>(begin: 0.95, end: 1),
-                    curve: Curves.easeOut,
-                    builder: (context, scale, child) {
-                      return Transform.scale(
-                        scale: scale,
-                        child: child,
-                      );
-                    },
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  invoice.customerName,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                Text(
-                                  _formatDate(invoice.date),
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                _buildAmountInfo('الإجمالي', invoice.totalAmount),
-                                _buildAmountInfo('المدفوع', invoice.paidAmount),
-                                _buildAmountInfo(
-                                  'المتبقي',
-                                  (invoice.totalAmount - invoice.paidAmount),
-                                  color: (invoice.totalAmount - invoice.paidAmount) > 0
-                                      ? Colors.red
-                                      : Colors.green,
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: IconButton(
-                                icon: const Icon(Icons.info_outline, color: AppColors.purple),
-                                tooltip: 'تفاصيل',
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (_) => BlocProvider.value(
-                                      value: context.read<InvoicesCubit>(),
-                                      child: InvoiceDetailsPage(invoice: invoice),
-                                    ),
-                                  );
-
-                                },
-                              ),
-                            ),
-                          ],
+                    return AnimationConfiguration.staggeredList(
+                      position: index,
+                      duration: const Duration(milliseconds: 400),
+                      child: SlideAnimation(
+                        verticalOffset: 50.0,
+                        child: FadeInAnimation(
+                          child: _buildInvoiceCard(invoice),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               );
             },
           ),
@@ -203,26 +150,76 @@ class _InvoiceListViewState extends State<InvoiceListView> {
     );
   }
 
+  Widget _buildInvoiceCard(Invoice invoice) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(invoice.customerName,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                Text(_formatDate(invoice.date),
+                    style: const TextStyle(fontSize: 14, color: Colors.grey)),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildAmountInfo('الإجمالي', invoice.totalAmount),
+                _buildAmountInfo('المدفوع', invoice.paidAmount),
+                _buildAmountInfo(
+                  'المتبقي',
+                  (invoice.totalAmount - invoice.paidAmount),
+                  color: (invoice.totalAmount - invoice.paidAmount) > 0
+                      ? Colors.red
+                      : Colors.green,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: const Icon(Icons.info_outline, color: AppColors.purple),
+                tooltip: 'تفاصيل',
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => BlocProvider.value(
+                      value: context.read<InvoicesCubit>(),
+                      child: InvoiceDetailsPage(invoice: invoice),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildAmountInfo(String label, double amount, {Color? color}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.grey[700],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
         const SizedBox(height: 4),
-        Text(
-          '${amount.toStringAsFixed(0)} ل.س',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: color ?? AppColors.purple,
-          ),
-        ),
+        Text('${amount.toStringAsFixed(0)} ل.س',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: color ?? AppColors.purple,
+            )),
       ],
     );
   }

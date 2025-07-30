@@ -10,8 +10,15 @@ import 'AddOrEditOffer_page.dart';
 import '../cubit/offer_state.dart';
 import '../../services/cubit/ServicesCubit.dart';
 
-class OffersPage extends StatelessWidget {
+class OffersPage extends StatefulWidget {
   const OffersPage({super.key});
+
+  @override
+  State<OffersPage> createState() => _OffersPageState();
+}
+
+class _OffersPageState extends State<OffersPage> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
 
   Future<bool?> _showConfirmDialog(BuildContext context, String title, String content) {
     return showDialog<bool>(
@@ -45,16 +52,22 @@ class OffersPage extends StatelessWidget {
     }
   }
 
-  OffersFilter _toOffersFilter(OffersFilter filter) {
-    switch (filter) {
-      case OffersFilter.active:
-        return OffersFilter.active;
-      case OffersFilter.expired:
-        return OffersFilter.expired;
-      case OffersFilter.all:
-      default:
-        return OffersFilter.all;
-    }
+  OffersFilter _toOffersFilter(OffersFilter filter) => _toOfferFilter(filter);
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -88,32 +101,33 @@ class OffersPage extends StatelessWidget {
                       onChanged: (value) {
                         if (value != null) {
                           context.read<OffersCubit>().setFilter(_toOffersFilter(value));
+                          _controller.reset();
+                          _controller.forward();
                         }
                       },
                     ),
                   ),
                   const Spacer(),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ElevatedButton.icon(
-                      onPressed: () async {
-                        final newOffer = await Navigator.push<Offer>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => BlocProvider.value(
-                              value: context.read<ServicesCubit>(),
-                              child: const AddOrEditOfferPage(),
-                            ),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final newOffer = await Navigator.push<Offer>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BlocProvider.value(
+                            value: context.read<ServicesCubit>(),
+                            child: const AddOrEditOfferPage(),
                           ),
-                        );
-                        if (newOffer != null) {
-                          context.read<OffersCubit>().addOffer(newOffer);
-                        }
-                      },
-                      icon: const Icon(Icons.add, color: Colors.white),
-                      label: const Text('عرض جديد', style: TextStyle(color: Colors.white)),
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
-                    ),
+                        ),
+                      );
+                      if (newOffer != null) {
+                        context.read<OffersCubit>().addOffer(newOffer);
+                        _controller.reset();
+                        _controller.forward();
+                      }
+                    },
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    label: const Text('عرض جديد', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
                   ),
                 ],
               ),
@@ -125,28 +139,50 @@ class OffersPage extends StatelessWidget {
                   itemCount: state.filteredOffers.length,
                   itemBuilder: (context, index) {
                     final offer = state.filteredOffers[index];
-                    return OfferCard(
-                      offer: offer,
-                      onEdit: () async {
-                        final updated = await Navigator.push<Offer>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => BlocProvider.value(
-                              value: context.read<ServicesCubit>(),
-                              child: AddOrEditOfferPage(offer: offer),
-                            ),
-                          ),
-                        );
-                        if (updated != null) {
-                          context.read<OffersCubit>().updateOffer(updated);
-                        }
-                      },
-                      onDelete: () async {
-                        final confirm = await _showConfirmDialog(context, 'تأكيد الحذف', 'هل أنت متأكد من حذف العرض؟');
-                        if (confirm == true) {
-                          context.read<OffersCubit>().deleteOffer(offer);
-                        }
-                      },
+
+                    final start = index * 0.1;
+                    final end = start + 0.5;
+                    final animation = CurvedAnimation(
+                      parent: _controller,
+                      curve: Interval(
+                        start < 1.0 ? start : 1.0,
+                        end < 1.0 ? end : 1.0,
+                        curve: Curves.easeOut,
+                      ),
+                    );
+
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.1),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: OfferCard(
+                          offer: offer,
+                          onEdit: () async {
+                            final updated = await Navigator.push<Offer>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => BlocProvider.value(
+                                  value: context.read<ServicesCubit>(),
+                                  child: AddOrEditOfferPage(offer: offer),
+                                ),
+                              ),
+                            );
+                            if (updated != null) {
+                              context.read<OffersCubit>().updateOffer(updated);
+                            }
+                          },
+                          onDelete: () async {
+                            final confirm = await _showConfirmDialog(
+                                context, 'تأكيد الحذف', 'هل أنت متأكد من حذف العرض؟');
+                            if (confirm == true) {
+                              context.read<OffersCubit>().deleteOffer(offer);
+                            }
+                          },
+                        ),
+                      ),
                     );
                   },
                 ),

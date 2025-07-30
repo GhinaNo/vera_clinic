@@ -15,8 +15,8 @@ class InvoicesHeader extends StatelessWidget {
           alignment: Alignment.centerRight,
           child: ElevatedButton.icon(
             onPressed: onAddInvoice,
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text('فاتورة جديدة', style: TextStyle(color: Colors.white)),
+            icon: const Icon(Icons.add, color: AppColors.offWhite),
+            label: const Text('فاتورة جديدة', style: TextStyle(color: AppColors.offWhite)),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
           ),
         ),

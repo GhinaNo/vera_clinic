@@ -16,7 +16,7 @@ class AddOrEditOfferPage extends StatefulWidget {
   State<AddOrEditOfferPage> createState() => _AddOrEditOfferPageState();
 }
 
-class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> {
+class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> with SingleTickerProviderStateMixin {
   final titleController = TextEditingController();
   final discountController = TextEditingController();
   DateTime? startDate;
@@ -24,9 +24,14 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> {
 
   List<String> selectedServiceIds = [];
 
+  late final AnimationController _animationController;
+  late final Animation<double> _fadeAnimation;
+  late final Animation<Offset> _slideAnimation;
+
   @override
   void initState() {
     super.initState();
+
     if (widget.offer != null) {
       titleController.text = widget.offer!.title;
       discountController.text = widget.offer!.discountPercent.toString();
@@ -38,12 +43,32 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> {
     discountController.addListener(() {
       setState(() {});
     });
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeIn,
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.2),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+
+    _animationController.forward();
   }
 
   @override
   void dispose() {
     titleController.dispose();
     discountController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -111,9 +136,7 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> {
 
     final confirm = await _showConfirmDialog(
       widget.offer == null ? 'تأكيد الإضافة' : 'تأكيد التعديل',
-      widget.offer == null
-          ? 'هل أنت متأكد أنك تريد إضافة هذا العرض؟'
-          : 'هل تريد حفظ التعديلات؟',
+      widget.offer == null ? 'هل أنت متأكد أنك تريد إضافة هذا العرض؟' : 'هل تريد حفظ التعديلات؟',
     );
 
     if (confirm == true) {
@@ -145,177 +168,188 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> {
 
         return Scaffold(
           appBar: AppBar(title: Text(widget.offer == null ? 'إضافة عرض' : 'تعديل عرض')),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'عنوان العرض',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: discountController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                  ],
-                  decoration: const InputDecoration(
-                    labelText: 'نسبة الخصم %',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
+          body: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => _pickDate(true),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.purple),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            startDate == null
-                                ? 'تاريخ البداية'
-                                : '${startDate!.year}/${startDate!.month}/${startDate!.day}',
-                          ),
-                        ),
+                    TextField(
+                      controller: titleController,
+                      decoration: InputDecoration(
+                        labelText: 'عنوان العرض',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => _pickDate(false),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.purple),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            endDate == null
-                                ? 'تاريخ النهاية'
-                                : '${endDate!.year}/${endDate!.month}/${endDate!.day}',
-                          ),
-                        ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: discountController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                      ],
+                      decoration: InputDecoration(
+                        labelText: 'نسبة الخصم %',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text('الخدمات المرتبطة بالعرض:', style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.list),
-                  label: const Text('اختيار الخدمات', style: TextStyle(color: AppColors.offWhite)),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
-                  onPressed: () async {
-                    final result = await Navigator.push<List<String>>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SelectServicesPage(
-                          allServices: allServices,
-                          initiallySelectedIds: selectedServiceIds,
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _pickDate(true),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: AppColors.purple),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                startDate == null
+                                    ? 'تاريخ البداية'
+                                    : '${startDate!.year}/${startDate!.month}/${startDate!.day}',
+                              ),
+                            ),
+                          ),
                         ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _pickDate(false),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: AppColors.purple),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                endDate == null
+                                    ? 'تاريخ النهاية'
+                                    : '${endDate!.year}/${endDate!.month}/${endDate!.day}',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('الخدمات المرتبطة بالعرض:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.list,color: Colors.white,),
+                      label: const Text('اختيار الخدمات', style: TextStyle(color: AppColors.offWhite)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.purple,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                    );
-                    if (result != null) {
-                      setState(() {
-                        selectedServiceIds = List.from(result);
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                if (selectedServiceIds.isEmpty)
-                  const Text('لم يتم اختيار خدمات بعد'),
-                if (selectedServiceIds.isNotEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: selectedServiceIds.map((id) {
-                      final service = allServices.firstWhere(
-                            (s) => s.id == id,
-                        orElse: () => Service(
-                          id: '',
-                          name: 'غير معروف',
-                          description: '',
-                          durationMinutes: 0,
-                          price: 0.0,
-                          departmentName: '',
-                          imagePath: '',
-                        ),
-                      );
+                      onPressed: () async {
+                        final result = await Navigator.push<List<String>>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SelectServicesPage(
+                              allServices: allServices,
+                              initiallySelectedIds: selectedServiceIds,
+                            ),
+                          ),
+                        );
+                        if (result != null) {
+                          setState(() {
+                            selectedServiceIds = List.from(result);
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    if (selectedServiceIds.isEmpty)
+                      const Text('لم يتم اختيار خدمات بعد'),
+                    if (selectedServiceIds.isNotEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: selectedServiceIds.map((id) {
+                          final service = allServices.firstWhere(
+                                (s) => s.id == id,
+                            orElse: () => Service(
+                              id: '',
+                              name: 'غير معروف',
+                              description: '',
+                              durationMinutes: 0,
+                              price: 0.0,
+                              departmentName: '',
+                              imagePath: '',
+                            ),
+                          );
 
-                      // if (service.id.isEmpty) return const SizedBox.shrink();
+                          final discountedPrice = service.price * (1 - discountPercent / 100);
 
-                      final discountedPrice = service.price * (1 - discountPercent / 100);
-
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        child: ListTile(
-                          title: Text(service.name),
-                          subtitle: Text('${service.departmentName} | ${service.durationMinutes} دقيقة'),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisAlignment: MainAxisAlignment.center,
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: ListTile(
+                              title: Text(service.name),
+                              subtitle: Text('${service.departmentName} | ${service.durationMinutes} دقيقة'),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    '${service.price.toStringAsFixed(1)} ل.س',
-                                    style: const TextStyle(
-                                      decoration: TextDecoration.lineThrough,
-                                      color: Colors.redAccent,
-                                      fontSize: 12,
-                                    ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '${service.price.toStringAsFixed(1)} ل.س',
+                                        style: const TextStyle(
+                                          decoration: TextDecoration.lineThrough,
+                                          color: Colors.redAccent,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${discountedPrice.toStringAsFixed(1)} ل.س',
+                                        style: const TextStyle(
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Text(
-                                    '${discountedPrice.toStringAsFixed(1)} ل.س',
-                                    style: const TextStyle(
-                                      color: Colors.green,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
+                                  const SizedBox(width: 12),
+                                  IconButton(
+                                    icon: const Icon(Icons.close, color: Colors.redAccent),
+                                    onPressed: () {
+                                      setState(() {
+                                        selectedServiceIds.remove(id);
+                                      });
+                                    },
                                   ),
                                 ],
                               ),
-                              const SizedBox(width: 12),
-                              IconButton(
-                                icon: const Icon(Icons.close, color: Colors.redAccent),
-                                onPressed: () {
-                                  setState(() {
-                                    selectedServiceIds.remove(id);
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.purple,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                      );
-                    }).toList(),
-                  ),
-
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
-                    onPressed: _saveOffer,
-                    child: Text(
-                      widget.offer == null ? 'إضافة العرض' : 'حفظ التعديلات',
-                      style: const TextStyle(color: AppColors.offWhite),
+                        onPressed: _saveOffer,
+                        child: Text(
+                          widget.offer == null ? 'إضافة العرض' : 'حفظ التعديلات',
+                          style: const TextStyle(color: AppColors.offWhite, fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../services/cubit/ServicesCubit.dart';
+import 'package:vera_clinic/core/theme/app_theme.dart';
+import 'package:vera_clinic/features/services/cubit/ServicesCubit.dart';
 import '../cubit/invoices_cubit.dart';
-
 import '../widgets/Invoice_List_View.dart';
 import '../widgets/invoices_header.dart';
 import 'AddInvoicePage.dart';

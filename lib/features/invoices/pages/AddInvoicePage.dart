@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:vera_clinic/features/invoices/cubit/invoices_cubit.dart';
 import 'package:vera_clinic/features/invoices/models/invoice_model.dart';
 import 'package:vera_clinic/features/services/cubit/ServicesCubit.dart';
@@ -16,12 +17,7 @@ class AddInvoicePage extends StatefulWidget {
 }
 
 class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStateMixin {
-  final List<String> dummyCustomers = [
-    'آية محمد',
-    'سارة الأحمد',
-    'نور خليل',
-    'هالة ديوب',
-  ];
+  final List<String> dummyCustomers = ['آية محمد', 'سارة الأحمد', ' نور خليل', ' هالة ديوب'];
 
   String? selectedCustomer;
   List<Service> selectedServices = [];
@@ -29,26 +25,15 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
   final TextEditingController customerSearchController = TextEditingController();
   List<String> filteredCustomers = [];
 
-  late final AnimationController _fadeController;
-  late final Animation<double> _fadeAnimation;
-
   @override
   void initState() {
     super.initState();
     filteredCustomers = List.from(dummyCustomers);
-
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeIn);
-
     paidAmountController.text = '0';
   }
 
   @override
   void dispose() {
-    _fadeController.dispose();
     paidAmountController.dispose();
     customerSearchController.dispose();
     super.dispose();
@@ -75,9 +60,7 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
           builder: (context, setState) {
             void filter(String query) {
               setState(() {
-                filteredServices = services
-                    .where((s) => s.name.contains(query.trim()))
-                    .toList();
+                filteredServices = services.where((s) => s.name.contains(query.trim())).toList();
               });
             }
 
@@ -91,10 +74,7 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'اختر خدمة',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
+                      const Text('اختر خدمة', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 12),
                       TextField(
                         controller: searchController,
@@ -114,22 +94,13 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
                           itemBuilder: (context, index) {
                             final s = filteredServices[index];
                             return Card(
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               margin: const EdgeInsets.symmetric(vertical: 6),
                               child: ListTile(
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                                title: Text(
-                                  s.name,
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                                trailing: Text(
-                                  '${s.price.toStringAsFixed(0)} ل.س',
-                                  style: const TextStyle(color: Colors.teal),
-                                ),
-                                onTap: () {
-                                  Navigator.of(context).pop(s);
-                                },
+                                title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                trailing: Text('${s.price.toStringAsFixed(0)} ل.س', style: const TextStyle(color: Colors.teal)),
+                                onTap: () => Navigator.of(context).pop(s),
                               ),
                             );
                           },
@@ -153,12 +124,10 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
       },
     );
 
-    // ✅ بعد الإغلاق نتحقق من القيمة ونضيفها إذا لم تكن موجودة
     if (picked != null && !selectedServices.contains(picked)) {
       setState(() {
         selectedServices.add(picked);
       });
-      _fadeController.forward(from: 0);
     }
   }
 
@@ -188,7 +157,6 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
             children: [
               const Text('معلومات الزبون', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
-
               TextFormField(
                 controller: customerSearchController,
                 decoration: InputDecoration(
@@ -199,21 +167,16 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
                 onChanged: _filterCustomers,
               ),
               const SizedBox(height: 10),
-
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                   labelText: 'اختر الزبون',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 value: selectedCustomer,
-                items: filteredCustomers.map((name) => DropdownMenuItem(
-                  value: name,
-                  child: Text(name),
-                )).toList(),
+                items: filteredCustomers.map((name) => DropdownMenuItem(value: name, child: Text(name))).toList(),
                 onChanged: (value) => setState(() => selectedCustomer = value),
               ),
               const SizedBox(height: 24),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -226,44 +189,57 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
                 ],
               ),
               const SizedBox(height: 10),
-
               selectedServices.isEmpty
-                  ? const Center(child: Text('لم يتم اختيار خدمات بعد'))
-                  : ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: selectedServices.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
-                itemBuilder: (context, index) {
-                  final s = selectedServices[index];
-                  return Card(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 2,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('${s.price.toStringAsFixed(0)} ل.س'),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.red),
-                        onPressed: () {
-                          setState(() {
-                            selectedServices.removeAt(index);
-                            if (paidAmount > totalPrice) {
-                              paidAmountController.text = totalPrice.toStringAsFixed(0);
-                            }
-                          });
-                        },
+                  ? Column(
+                children: [
+
+                  const SizedBox(height: 12),
+                  const Text('لم يتم اختيار خدمات بعد', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                ],
+              )
+                  : AnimationLimiter(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: selectedServices.length,
+                  itemBuilder: (context, index) {
+                    final s = selectedServices[index];
+                    return AnimationConfiguration.staggeredList(
+                      position: index,
+                      duration: const Duration(milliseconds: 400),
+                      child: SlideAnimation(
+                        horizontalOffset: 50.0,
+                        child: FadeInAnimation(
+                          child: Card(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            elevation: 3,
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              leading: const Icon(Icons.check_circle_outline, color: Colors.teal),
+                              title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              subtitle: Text('${s.price.toStringAsFixed(0)} ل.س', style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete_forever_outlined, color: Colors.red),
+                                onPressed: () {
+                                  setState(() {
+                                    selectedServices.removeAt(index);
+                                    if (paidAmount > totalPrice) {
+                                      paidAmountController.text = totalPrice.toStringAsFixed(0);
+                                    }
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-
               const SizedBox(height: 24),
-
               const Text('الدفع', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
-
               TextFormField(
                 controller: paidAmountController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: false),
@@ -276,9 +252,7 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
                 ),
                 onChanged: _onPaidAmountChanged,
               ),
-
               const SizedBox(height: 12),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -291,9 +265,7 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
                       )),
                 ],
               ),
-
               const SizedBox(height: 24),
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -305,9 +277,7 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
                   ),
                   onPressed: () {
                     if (selectedCustomer == null || selectedServices.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('يرجى اختيار زبون وخدمة على الأقل')),
-                      );
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى اختيار زبون وخدمة على الأقل')));
                       return;
                     }
 
@@ -315,9 +285,7 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
 
                     final invoice = Invoice(
                       customerName: selectedCustomer!,
-                      items: selectedServices
-                          .map((s) => InvoiceItem(serviceName: s.name, price: s.price))
-                          .toList(),
+                      items: selectedServices.map((s) => InvoiceItem(serviceName: s.name, price: s.price)).toList(),
                       totalAmount: totalPrice,
                       payments: [Payment(amount: paid, date: DateTime.now())],
                       date: DateTime.now(),
@@ -326,9 +294,7 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
 
                     context.read<InvoicesCubit>().addInvoice(invoice);
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('✔ تم حفظ الفاتورة')),
-                    );
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✔ تم حفظ الفاتورة')));
 
                     Navigator.pop(context);
                   },
