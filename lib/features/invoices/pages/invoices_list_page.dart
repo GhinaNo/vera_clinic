@@ -7,26 +7,45 @@ import '../widgets/Invoice_List_View.dart';
 import '../widgets/invoices_header.dart';
 import 'AddInvoicePage.dart';
 
-class InvoicesListPage extends StatelessWidget {
+class InvoicesListPage extends StatefulWidget {
   const InvoicesListPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    void _navigateToAddInvoice() {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => BlocProvider.value(
-            value: context.read<ServicesCubit>(),
-            child: BlocProvider.value(
-              value: context.read<InvoicesCubit>(),
-              child: const AddInvoicePage(),
-            ),
+  State<InvoicesListPage> createState() => _InvoicesListPageState();
+}
+
+class _InvoicesListPageState extends State<InvoicesListPage> {
+
+  bool isArchiveMode = false;
+  @override
+  void initState() {
+    super.initState();
+    context.read<InvoicesCubit>().loadInitial();
+  }
+  void _navigateToAddInvoice() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: context.read<ServicesCubit>(),
+          child: BlocProvider.value(
+            value: context.read<InvoicesCubit>(),
+            child: const AddInvoicePage(),
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
+  void _toggleArchiveMode() {
+    setState(() {
+      isArchiveMode = !isArchiveMode;
+
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.offWhite,
       body: SafeArea(
@@ -34,8 +53,14 @@ class InvoicesListPage extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              InvoicesHeader(onAddInvoice: _navigateToAddInvoice),
-              const Expanded(child: InvoiceListView()),
+              InvoicesHeader(
+                onAddInvoice: _navigateToAddInvoice,
+                onToggleArchiveView: _toggleArchiveMode,
+                isArchiveMode: isArchiveMode,
+              ),
+              Expanded(
+                child: InvoiceListView(showArchived: isArchiveMode),
+              ),
             ],
           ),
         ),

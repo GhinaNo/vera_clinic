@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:uuid/uuid.dart';
 import 'package:vera_clinic/features/invoices/cubit/invoices_cubit.dart';
 import 'package:vera_clinic/features/invoices/models/invoice_model.dart';
 import 'package:vera_clinic/features/services/cubit/ServicesCubit.dart';
@@ -284,6 +285,7 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
                     final paid = double.tryParse(paidAmountController.text) ?? 0;
 
                     final invoice = Invoice(
+                      id : const Uuid().v4(),
                       customerName: selectedCustomer!,
                       items: selectedServices.map((s) => InvoiceItem(serviceName: s.name, price: s.price)).toList(),
                       totalAmount: totalPrice,
