@@ -317,8 +317,6 @@ class _DashboardPageState extends State<DashboardPage> {
         ServicesPage(departments: departments),
         OffersPage(),
         InvoicesListPage(),
-        Center(child: Text('محتوى غير متوفر')),
-        Center(child: Text('المحاسبة')),
         Center(child: Text('الزبائن')),
         Center(child: Text('المواعيد')),
         Center(child: Text('الحجوزات')),
