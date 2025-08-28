@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:vera_clinic/features/departments/models/department.dart';
-import 'package:vera_clinic/features/departments/pages/departments_pages.dart';
-import 'package:vera_clinic/features/services/pages/service_page.dart';
 import '../../core/theme/app_theme.dart';
 import '../departments/cubit/departments_cubit.dart';
-import '../invoices/cubit/invoices_cubit.dart';
-import '../invoices/pages/invoices_list_page.dart';
+import '../departments/models/department.dart';
+import '../departments/pages/departments_pages.dart';
+import '../services/cubit/ServicesCubit.dart';
+import '../services/pages/service_page.dart';
 import '../offers/cubit/offer_cubit.dart';
 import '../offers/pages/offers_page.dart';
-import '../services/cubit/ServicesCubit.dart';
+import '../invoices/cubit/invoices_cubit.dart';
+import '../invoices/pages/invoices_list_page.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  final String role;
+
+  const DashboardPage({super.key, required this.role});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -21,6 +23,10 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   int selectedIndex = 0;
   bool isCollapsed = false;
+
+  late List<String> allowedTitles;
+  late List<IconData> allowedIcons;
+  late List<Widget> allowedContent;
 
   List<Department> departments = [
     Department(
@@ -37,39 +43,83 @@ class _DashboardPageState extends State<DashboardPage> {
     ),
   ];
 
-  void updateDepartments(List<Department> updatedDepartments) {
-    setState(() {
-      departments = updatedDepartments;
-    });
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.role == 'admin') {
+      allowedTitles = [
+        'الرئيسية',
+        'الأقسام',
+        'الخدمات',
+        'العروض',
+        'المحاسبة',
+        'الزبائن',
+        'المواعيد',
+        'الحجوزات',
+        'الإدارة',
+        'الموظفون',
+        'الإشعارات',
+      ];
+      allowedIcons = [
+        Icons.dashboard_outlined,
+        Icons.category_outlined,
+        Icons.medical_services_outlined,
+        Icons.local_offer_outlined,
+        Icons.account_balance_wallet_outlined,
+        Icons.person_outline,
+        Icons.calendar_month_outlined,
+        Icons.book_online_outlined,
+        Icons.manage_accounts_outlined,
+        Icons.people_alt_outlined,
+        Icons.notifications_outlined,
+      ];
+    } else {
+      allowedTitles = [
+        'المحاسبة',
+        'الزبائن',
+        'المواعيد',
+        'الحجوزات',
+        'الإشعارات',
+      ];
+      allowedIcons = [
+        Icons.account_balance_wallet_outlined,
+        Icons.person_outline,
+        Icons.calendar_month_outlined,
+        Icons.book_online_outlined,
+        Icons.notifications_outlined,
+      ];
+    }
+
+    allowedContent = allowedTitles.map((t) {
+      switch (t) {
+        case 'الرئيسية':
+          return const Center(child: Text('محتوى الرئيسية'));
+        case 'الأقسام':
+          return DepartmentsPage();
+        case 'الخدمات':
+          return ServicesPage(departments: departments);
+        case 'العروض':
+          return OffersPage();
+        case 'المحاسبة':
+          return InvoicesListPage();
+        case 'الزبائن':
+          return const Center(child: Text('الزبائن'));
+        case 'المواعيد':
+          return const Center(child: Text('المواعيد'));
+        case 'الحجوزات':
+          return const Center(child: Text('الحجوزات'));
+        case 'الإدارة':
+          return const Center(child: Text('الإدارة'));
+        case 'الموظفون':
+          return const Center(child: Text('الموظفون'));
+        case 'الإشعارات':
+          return const Center(child: Text('الإشعارات'));
+        default:
+          return const Center(child: Text('محتوى غير متوفر'));
+      }
+    }).toList();
   }
-
-  final List<String> titles = [
-    'الرئيسية',
-    'الأقسام',
-    'الخدمات',
-    'العروض',
-    'المحاسبة',
-    'الزبائن',
-    'المواعيد',
-    'الحجوزات',
-    'الإدارة',
-    'الموظفون',
-    'الإشعارات',
-  ];
-
-  final List<IconData> icons = [
-    Icons.dashboard_outlined,
-    Icons.category_outlined,
-    Icons.medical_services_outlined,
-    Icons.local_offer_outlined,
-    Icons.account_balance_wallet_outlined,
-    Icons.person_outline,
-    Icons.calendar_month_outlined,
-    Icons.book_online_outlined,
-    Icons.manage_accounts_outlined,
-    Icons.people_alt_outlined,
-    Icons.notifications_outlined,
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -78,25 +128,15 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider(
-          create: (_) => DepartmentsCubit()..loadInitial(departments),
-        ),
-        BlocProvider(
-          create: (_) => ServicesCubit(),
-        ),
-        BlocProvider(
-          create: (_) => OffersCubit(),
-        ),
-        BlocProvider(
-          create: (_) => InvoicesCubit(),
-        ),
+        BlocProvider(create: (_) => DepartmentsCubit()..loadInitial(departments)),
+        BlocProvider(create: (_) => ServicesCubit()),
+        BlocProvider(create: (_) => OffersCubit()),
+        BlocProvider(create: (_) => InvoicesCubit()),
       ],
       child: Scaffold(
         backgroundColor: AppColors.offWhite,
         drawer: isSmallScreen ? _buildDrawer() : null,
-        body: isSmallScreen
-            ? _buildSmallScreenBody()
-            : _buildLargeScreenBody(),
+        body: isSmallScreen ? _buildSmallScreenBody() : _buildLargeScreenBody(),
       ),
     );
   }
@@ -120,14 +160,14 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               Expanded(
                 child: ListView.builder(
-                  itemCount: titles.length,
+                  itemCount: allowedTitles.length,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   itemBuilder: (context, i) {
                     final isSelected = selectedIndex == i;
                     return ListTile(
-                      leading: Icon(icons[i], color: Colors.white),
+                      leading: Icon(allowedIcons[i], color: Colors.white),
                       title: Text(
-                        titles[i],
+                        allowedTitles[i],
                         style: const TextStyle(
                           fontFamily: 'Tajawal',
                           color: Colors.white,
@@ -136,10 +176,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                       selected: isSelected,
                       selectedTileColor: Colors.white.withOpacity(0.2),
-                      onTap: () {
-                        setState(() => selectedIndex = i);
-                        Navigator.of(context).pop();
-                      },
+                      onTap: () => setState(() => selectedIndex = i),
                     );
                   },
                 ),
@@ -158,11 +195,11 @@ class _DashboardPageState extends State<DashboardPage> {
           backgroundColor: AppColors.purple,
           title: Row(
             children: [
-              Icon(icons[selectedIndex], color: Colors.white),
+              Icon(allowedIcons[selectedIndex], color: Colors.white),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  titles[selectedIndex],
+                  allowedTitles[selectedIndex],
                   style: const TextStyle(
                     fontFamily: 'Tajawal',
                     fontWeight: FontWeight.bold,
@@ -180,7 +217,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
         ),
-        Expanded(child: _buildContent(selectedIndex)),
+        Expanded(child: _buildContent()),
       ],
     );
   }
@@ -222,14 +259,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 const SizedBox(height: 10),
                 Expanded(
                   child: ListView.builder(
-                    itemCount: titles.length,
+                    itemCount: allowedTitles.length,
                     padding: const EdgeInsets.symmetric(horizontal: 6),
                     itemBuilder: (context, i) {
                       final isSelected = selectedIndex == i;
                       return InkWell(
-                        onTap: () {
-                          setState(() => selectedIndex = i);
-                        },
+                        onTap: () => setState(() => selectedIndex = i),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
@@ -240,12 +275,12 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                           child: Row(
                             children: [
-                              Icon(icons[i], color: AppColors.secondaryColor, size: 20),
+                              Icon(allowedIcons[i], color: AppColors.secondaryColor, size: 20),
                               if (!isCollapsed) const SizedBox(width: 12),
                               if (!isCollapsed)
                                 Expanded(
                                   child: Text(
-                                    titles[i],
+                                    allowedTitles[i],
                                     style: const TextStyle(
                                       fontFamily: 'Tajawal',
                                       color: AppColors.secondaryColor,
@@ -284,11 +319,11 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(icons[selectedIndex], color: AppColors.purple),
+                    Icon(allowedIcons[selectedIndex], color: AppColors.purple),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        titles[selectedIndex],
+                        allowedTitles[selectedIndex],
                         style: Theme.of(context).textTheme.titleLarge!.copyWith(
                           fontFamily: 'Tajawal',
                           color: AppColors.purple,
@@ -300,7 +335,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ],
                 ),
               ),
-              Expanded(child: _buildContent(selectedIndex)),
+              Expanded(child: _buildContent()),
             ],
           ),
         ),
@@ -308,22 +343,10 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildContent(int index) {
+  Widget _buildContent() {
     return IndexedStack(
-      index: index,
-      children: [
-        Center(child: Text('محتوى الرئيسية')),
-        DepartmentsPage(),
-        ServicesPage(departments: departments),
-        OffersPage(),
-        InvoicesListPage(),
-        Center(child: Text('الزبائن')),
-        Center(child: Text('المواعيد')),
-        Center(child: Text('الحجوزات')),
-        Center(child: Text('الإدارة')),
-        Center(child: Text('الموظفون')),
-        Center(child: Text('الإشعارات')),
-      ],
+      index: selectedIndex,
+      children: allowedContent,
     );
   }
 }

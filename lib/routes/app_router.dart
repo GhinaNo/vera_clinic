@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:vera_clinic/features/departments/pages/departments_pages.dart';
 import 'package:vera_clinic/features/services/pages/service_page.dart';
 import '../features/auth/login_page.dart';
+import '../features/auth/screens/check_code_screen.dart';
+import '../features/auth/screens/forget_password_screen.dart';
+import '../features/auth/screens/reset_password_screen.dart';
 import '../features/departments/cubit/departments_cubit.dart';
 import '../features/home/dashboard_page.dart';
 import '../features/invoices/pages/invoices_list_page.dart';
@@ -14,12 +17,36 @@ final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(
       path: '/login',
-      builder: (context, state) => const LoginPage(),
+      builder: (context, state) =>  LoginScreen(),
+    ),
+
+    GoRoute(
+      path: '/forget-password',
+      builder: (context, state) => const ForgetPasswordScreen(),
     ),
     GoRoute(
-      path: '/home',
-      builder: (context, state) => const DashboardPage(),
+      path: '/check-code',
+      builder: (context, state) => CheckCodeScreen(),
     ),
+
+    GoRoute(
+      path: '/reset-password',
+      builder: (context, state) {
+        final code = state.extra as String? ?? '';
+        return ResetPasswordScreen(code: code);
+      },
+    ),
+
+
+
+    GoRoute(
+      path: '/home',
+      builder: (context, state) {
+        final role = state.extra as String? ?? 'receptionist';
+        return DashboardPage(role: role);
+      },
+    ),
+
     GoRoute(
       path: '/departments',
       builder: (context, state) =>
