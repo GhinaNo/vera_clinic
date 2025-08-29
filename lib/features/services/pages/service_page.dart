@@ -6,14 +6,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:vera_clinic/core/theme/app_theme.dart';
-import 'package:vera_clinic/features/departments/models/department.dart';
-import 'package:vera_clinic/features/departments/cubit/departments_cubit.dart';
-import 'package:vera_clinic/features/services/cubit/ServicesCubit.dart';
-import 'package:vera_clinic/features/services/models/service.dart';
-import 'package:vera_clinic/features/services/pages/edit_service_dialog.dart';
+
+import '../../departments/cubit/show_departments/show_departments_cubit.dart';
+import '../../departments/cubit/show_departments/show_departments_state.dart';
+import '../../departments/models/department.dart';
+import '../cubit/ServicesCubit.dart';
+import '../models/service.dart';
+import 'edit_service_dialog.dart';
+
 
 class ServicesPage extends StatelessWidget {
-  const ServicesPage({super.key, required List<Department> departments});
+  const ServicesPage({super.key});
 
   Future<void> pickImage(Function(String path) onImagePicked) async {
     final ImagePicker picker = ImagePicker();
@@ -80,7 +83,7 @@ class ServicesPage extends StatelessWidget {
                         DropdownButtonFormField<int>(
                           decoration: _inputDecoration('المدة'),
                           value: selectedDurationMinutes,
-                          items: [15,30, 45, 60, 90, 120].map((minutes) {
+                          items: [15, 30, 45, 60, 90, 120].map((minutes) {
                             return DropdownMenuItem(
                               value: minutes,
                               child: Text('$minutes دقيقة'),
@@ -157,7 +160,6 @@ class ServicesPage extends StatelessWidget {
                                   departmentName: selectedDepartment!,
                                   imagePath: selectedImagePath!,
                                 );
-
 
                                 context.read<ServicesCubit>().addService(newService);
                                 Navigator.pop(dialogContext);
@@ -277,8 +279,13 @@ class ServicesPage extends StatelessWidget {
       crossAxisCount = 2;
     }
 
-    return BlocBuilder<DepartmentsCubit, List<Department>>(
-      builder: (context, departments) {
+    return BlocBuilder<ShowDepartmentsCubit, ShowDepartmentsState>(
+      builder: (context, state) {
+        List<Department> departments = [];
+        if (state is ShowDepartmentsSuccess) {
+          departments = state.departments;
+        }
+
         return Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -322,7 +329,6 @@ class ServicesPage extends StatelessWidget {
                         },
                       );
                     }
-
                     return GridView.builder(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,

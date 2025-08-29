@@ -6,7 +6,6 @@ import '../features/auth/login_page.dart';
 import '../features/auth/screens/check_code_screen.dart';
 import '../features/auth/screens/forget_password_screen.dart';
 import '../features/auth/screens/reset_password_screen.dart';
-import '../features/departments/cubit/departments_cubit.dart';
 import '../features/home/dashboard_page.dart';
 import '../features/invoices/pages/invoices_list_page.dart';
 import '../features/offers/cubit/offer_cubit.dart';
@@ -15,62 +14,29 @@ import '../features/offers/pages/offers_page.dart';
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
   routes: [
-    GoRoute(
-      path: '/login',
-      builder: (context, state) =>  LoginScreen(),
-    ),
-
-    GoRoute(
-      path: '/forget-password',
-      builder: (context, state) => const ForgetPasswordScreen(),
-    ),
-    GoRoute(
-      path: '/check-code',
-      builder: (context, state) => CheckCodeScreen(),
-    ),
-
-    GoRoute(
-      path: '/reset-password',
-      builder: (context, state) {
-        final code = state.extra as String? ?? '';
-        return ResetPasswordScreen(code: code);
-      },
-    ),
-
-
-
-    GoRoute(
-      path: '/home',
-      builder: (context, state) {
-        final role = state.extra as String? ?? 'receptionist';
-        return DashboardPage(role: role);
-      },
-    ),
-
-    GoRoute(
-      path: '/departments',
-      builder: (context, state) =>
-          BlocProvider(
-            create: (_) => DepartmentsCubit(),
-            child: DepartmentsPage(),
-          ),
-    ),
-
-    GoRoute(
-      path: '/offers',
-      builder: (context, state) => BlocProvider(
-        create: (_) => OffersCubit(),
-        child: const OffersPage(),
-      ),
-    ),
-    GoRoute(
-      path: '/services',
-      builder: (context, state) => ServicesPage(departments: []),
-    ),
-    GoRoute(
-      path: '/invoices',
-      builder: (context, state) => InvoicesListPage(),
-    ),
-
+    GoRoute(path: '/login', builder: (context, state) => LoginScreen()),
+    GoRoute(path: '/forget-password', builder: (context, state) => const ForgetPasswordScreen()),
+    GoRoute(path: '/check-code', builder: (context, state) => CheckCodeScreen()),
+    GoRoute(path: '/reset-password', builder: (context, state) {
+      final code = state.extra as String? ?? '';
+      return ResetPasswordScreen(code: code);
+    }),
+    GoRoute(path: '/home', builder: (context, state) {
+      final extra = state.extra as Map<String, String>? ?? {};
+      final role = extra['role'] ?? 'receptionist';
+      final token = extra['token'] ?? '';
+      return DashboardPage(role: role, token: token);
+    }),
+    GoRoute(path: '/departments', builder: (context, state) {
+      final extra = state.extra as Map<String, String>? ?? {};
+      final token = extra['token'] ?? '';
+      return DepartmentsPage(token: token);
+    }),
+    GoRoute(path: '/offers', builder: (context, state) => BlocProvider(
+      create: (_) => OffersCubit(),
+      child: const OffersPage(),
+    )),
+    GoRoute(path: '/services', builder: (context, state) => ServicesPage()),
+    GoRoute(path: '/invoices', builder: (context, state) => InvoicesListPage()),
   ],
 );

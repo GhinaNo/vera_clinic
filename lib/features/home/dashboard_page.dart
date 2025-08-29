@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/services/token_storage.dart';
 import '../../core/theme/app_theme.dart';
-import '../departments/cubit/departments_cubit.dart';
-import '../departments/models/department.dart';
+import '../auth/cubit/log_out/logout_cubit.dart';
+import '../auth/repository/auth_repository.dart';
+import '../departments/cubit/show_departments/show_departments_cubit.dart';
+import '../departments/models/departments_repository.dart';
 import '../departments/pages/departments_pages.dart';
 import '../services/cubit/ServicesCubit.dart';
 import '../services/pages/service_page.dart';
@@ -13,8 +17,9 @@ import '../invoices/pages/invoices_list_page.dart';
 
 class DashboardPage extends StatefulWidget {
   final String role;
+  final String token;
 
-  const DashboardPage({super.key, required this.role});
+  const DashboardPage({super.key, required this.role, required this.token});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -28,20 +33,7 @@ class _DashboardPageState extends State<DashboardPage> {
   late List<IconData> allowedIcons;
   late List<Widget> allowedContent;
 
-  List<Department> departments = [
-    Department(
-      name: 'العناية بالبشرة',
-      supervisor: 'د. ليلى أحمد',
-      description: 'قسم متخصص في العناية بالبشرة والعلاجات التجميلية.',
-      location: 'الجناح 101',
-    ),
-    Department(
-      name: 'قسم الليزر',
-      supervisor: 'د. سامر الخطيب',
-      description: 'قسم الليزر لخدمات ازالة الشعر والعناية بالبشرة.',
-      location: 'الجناح 1',
-    ),
-  ];
+  late ShowDepartmentsCubit _departmentsCubit;
 
   @override
   void initState() {
@@ -49,7 +41,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
     if (widget.role == 'admin') {
       allowedTitles = [
-        'الرئيسية',
         'الأقسام',
         'الخدمات',
         'العروض',
@@ -60,9 +51,9 @@ class _DashboardPageState extends State<DashboardPage> {
         'الإدارة',
         'الموظفون',
         'الإشعارات',
+        'تسجيل الخروج',
       ];
       allowedIcons = [
-        Icons.dashboard_outlined,
         Icons.category_outlined,
         Icons.medical_services_outlined,
         Icons.local_offer_outlined,
@@ -73,6 +64,7 @@ class _DashboardPageState extends State<DashboardPage> {
         Icons.manage_accounts_outlined,
         Icons.people_alt_outlined,
         Icons.notifications_outlined,
+        Icons.logout,
       ];
     } else {
       allowedTitles = [
@@ -81,6 +73,7 @@ class _DashboardPageState extends State<DashboardPage> {
         'المواعيد',
         'الحجوزات',
         'الإشعارات',
+        'تسجيل الخروج',
       ];
       allowedIcons = [
         Icons.account_balance_wallet_outlined,
@@ -88,37 +81,115 @@ class _DashboardPageState extends State<DashboardPage> {
         Icons.calendar_month_outlined,
         Icons.book_online_outlined,
         Icons.notifications_outlined,
+        Icons.logout,
       ];
     }
 
+    _departmentsCubit = ShowDepartmentsCubit(
+      repository: DepartmentsRepository(token: widget.token),
+    )..fetchDepartments();
+
     allowedContent = allowedTitles.map((t) {
       switch (t) {
-        case 'الرئيسية':
-          return const Center(child: Text('محتوى الرئيسية'));
         case 'الأقسام':
-          return DepartmentsPage();
+          return DepartmentsPage(token: widget.token);
         case 'الخدمات':
-          return ServicesPage(departments: departments);
+          return BlocProvider.value(
+            value: _departmentsCubit,
+            child: ServicesPage(),
+          );
         case 'العروض':
           return OffersPage();
         case 'المحاسبة':
           return InvoicesListPage();
-        case 'الزبائن':
-          return const Center(child: Text('الزبائن'));
-        case 'المواعيد':
-          return const Center(child: Text('المواعيد'));
-        case 'الحجوزات':
-          return const Center(child: Text('الحجوزات'));
-        case 'الإدارة':
-          return const Center(child: Text('الإدارة'));
-        case 'الموظفون':
-          return const Center(child: Text('الموظفون'));
-        case 'الإشعارات':
-          return const Center(child: Text('الإشعارات'));
+        case 'تسجيل الخروج':
+          return _buildLogoutPage();
         default:
           return const Center(child: Text('محتوى غير متوفر'));
       }
     }).toList();
+  }
+
+  @override
+  void dispose() {
+    _departmentsCubit.close();
+    super.dispose();
+  }
+
+  Widget _buildLogoutPage() {
+    return const Center(child: Text("جارٍ تسجيل الخروج..."));
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        backgroundColor: Colors.white,
+        title: Row(
+          children: [
+            Icon(Icons.logout, color: AppColors.purple),
+            const SizedBox(width: 8),
+            const Text(
+              "تسجيل الخروج",
+              style: TextStyle(
+                fontFamily: 'Tajawal',
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 16,
+          ),
+        ),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text(
+              "إلغاء",
+              style: TextStyle(
+                fontFamily: 'Tajawal',
+                color: Colors.grey,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.purple,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            child: const Text(
+              "تسجيل الخروج",
+              style: TextStyle(
+                fontFamily: 'Tajawal',
+                fontSize: 16,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true) {
+      context.read<LogoutCubit>().logout().then((_) async {
+        await TokenStorage.clear();
+        if (mounted) context.go('/login');
+      });
+    }
   }
 
   @override
@@ -128,10 +199,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => DepartmentsCubit()..loadInitial(departments)),
+        BlocProvider.value(value: _departmentsCubit),
         BlocProvider(create: (_) => ServicesCubit()),
         BlocProvider(create: (_) => OffersCubit()),
         BlocProvider(create: (_) => InvoicesCubit()),
+        BlocProvider(create: (_) => LogoutCubit(AuthRepository())),
       ],
       child: Scaffold(
         backgroundColor: AppColors.offWhite,
@@ -164,6 +236,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   itemBuilder: (context, i) {
                     final isSelected = selectedIndex == i;
+
                     return ListTile(
                       leading: Icon(allowedIcons[i], color: Colors.white),
                       title: Text(
@@ -176,7 +249,13 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                       selected: isSelected,
                       selectedTileColor: Colors.white.withOpacity(0.2),
-                      onTap: () => setState(() => selectedIndex = i),
+                      onTap: () {
+                        if (allowedTitles[i] == "تسجيل الخروج") {
+                          _confirmLogout(context); // ➡️ استدعاء Dialog
+                        } else {
+                          setState(() => selectedIndex = i);
+                        }
+                      },
                     );
                   },
                 ),
@@ -264,7 +343,13 @@ class _DashboardPageState extends State<DashboardPage> {
                     itemBuilder: (context, i) {
                       final isSelected = selectedIndex == i;
                       return InkWell(
-                        onTap: () => setState(() => selectedIndex = i),
+                        onTap: () {
+                          if (allowedTitles[i] == "تسجيل الخروج") {
+                            _confirmLogout(context);
+                          } else {
+                            setState(() => selectedIndex = i);
+                          }
+                        },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),

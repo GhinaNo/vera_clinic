@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vera_clinic/core/theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../models/department.dart';
 
 class DepartmentCard extends StatelessWidget {
@@ -25,23 +25,23 @@ class DepartmentCard extends StatelessWidget {
           style: TextStyle(
             color: AppColors.purple,
             fontWeight: FontWeight.bold,
-            fontSize: 24,
+            fontSize: 22,
           ),
           textAlign: TextAlign.right,
         ),
         content: SingleChildScrollView(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildDetailRow(Icons.person_outline, 'الطبيب المشرف', department.supervisor),
               const SizedBox(height: 10),
-              _buildDetailRow(Icons.location_on_outlined, 'رقم الجناح', department.location),
+              _buildDetailRow(Icons.location_on_outlined, 'رقم الجناح', department.suite_no),
               const SizedBox(height: 15),
               Text(
                 'حول هذا القسم:',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 18,
+                  fontSize: 16,
                   color: AppColors.purple,
                 ),
                 textAlign: TextAlign.right,
@@ -50,7 +50,7 @@ class DepartmentCard extends StatelessWidget {
               Text(
                 department.description,
                 textAlign: TextAlign.right,
-                style: TextStyle(fontSize: 15, color: Colors.grey.shade800),
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
               ),
             ],
           ),
@@ -58,22 +58,28 @@ class DepartmentCard extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () async {
-              Navigator.pop(context); // إغلاق الديالوج
+              Navigator.pop(context);
               await onDelete();
             },
             child: Text(
               'حذف',
-              style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.red.shade700,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context); // إغلاق الديالوج
+              Navigator.pop(context);
               await onEdit();
             },
             child: Text(
               'تعديل',
-              style: TextStyle(color: AppColors.purple, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: AppColors.purple,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           TextButton(
@@ -88,14 +94,11 @@ class DepartmentCard extends StatelessWidget {
   Widget _buildDetailRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, color: AppColors.purple),
-        const SizedBox(width: 10),
+        Icon(icon, color: AppColors.purple, size: 20),
+        const SizedBox(width: 8),
         Text(
           '$label: ',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: AppColors.purple,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.purple),
         ),
         Expanded(
           child: Text(
@@ -111,56 +114,41 @@ class DepartmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(18),
       onTap: () => _showDetailsDialog(context),
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 8,
-        shadowColor: AppColors.purple.withOpacity(0.5),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              colors: [
-                AppColors.purple.withOpacity(0.95),
-                AppColors.purple.withOpacity(0.85),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      child: SizedBox(
+        width: 220,
+        height: 120,
+        child: Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          elevation: 4,
+          shadowColor: AppColors.purple.withOpacity(0.4),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.purple.withOpacity(0.9),
+                  AppColors.purple.withOpacity(0.7),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            child: Center(
+              child: Text(
                 department.name,
                 style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                   color: Colors.white,
-                  letterSpacing: 0.8,
+                  letterSpacing: 0.6,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  const Icon(Icons.person_outline, color: Colors.white70, size: 22),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      department.supervisor,
-                      style: const TextStyle(color: Colors.white70, fontSize: 16),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),

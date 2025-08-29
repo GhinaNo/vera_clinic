@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:vera_clinic/core/services/token_storage.dart';
 import '../../../core/constant/ApiConstants.dart';
 import '../model/login_response.dart';
 
-/// Exception مخصص للأخطاء الخاصة بالمصادقة
 class AuthException implements Exception {
   final String message;
   AuthException(this.message);
@@ -47,7 +47,6 @@ class AuthRepository {
       } else {
         final serverMsg = data['message'] ?? "فشل تسجيل الدخول";
 
-        // ترجمة الرسائل حسب نص السيرفر
         String userMessage;
         switch (serverMsg.toLowerCase()) {
           case "invalid email or password":
@@ -74,6 +73,47 @@ class AuthRepository {
     }
   }
 
+  ///تسجيل الخروج
+  Future<void> logout() async{
+    final url = ApiConstants.logoutUrl();
+    final token = await TokenStorage.getToken();
+    
+    print('Logout URL: $url');
+    print('Logout Token Exists: ${token != null}');
+
+    if (token == null || token.isEmpty) {
+      // لا يوجد توكن اصلاً: اعتبر الجلسة منتهية
+      throw Exception('no_token');
+    }
+    
+    try{
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        }
+      );
+
+      print('Logout Status Code: ${response.statusCode}');
+      print('Logout Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return;
+      } else if (response.statusCode == 401) {
+        throw Exception('unauthorized');
+      } else if (response.statusCode >= 500) {
+        throw Exception('server_error');
+      } else {
+        throw Exception('unknown_error');
+      }
+    } catch (e) {
+      print('Logout Error: $e');
+      rethrow;
+    }
+  }
+
+
   /// نسيت كلمة المرور
   Future<String> forgetPassword(String email) async {
     final url = ApiConstants.forgetPasswordUrl();
@@ -96,7 +136,6 @@ class AuthRepository {
       final data = json.decode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // رسائل UI بالعربي حسب حالة السيرفر
         return "تم إرسال رمز إعادة تعيين كلمة المرور إلى بريدك الإلكتروني";
       } else {
         final serverMsg = data['message'] ?? "";

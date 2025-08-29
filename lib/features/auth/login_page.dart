@@ -89,11 +89,15 @@ class _LoginFormState extends State<LoginForm> {
                       listener: (context, state) {
                         setState(() => isLoading = false);
                         if (state is LoginSuccess) {
-                          final role = state.loginResponse.role;
-                          showCustomToast(
-                              context, 'تم تسجيل الدخول بنجاح',
-                              success: true);
-                          context.go('/home', extra: role);
+                          final loginResponse = state.loginResponse;
+                          showCustomToast(context, 'تم تسجيل الدخول بنجاح', success: true);
+                          context.go(
+                            '/home',
+                            extra: {
+                              'role': loginResponse.role,
+                              'token': loginResponse.token,
+                            },
+                          );
                         } else if (state is LoginFailure) {
                           showCustomToast(context, state.error, success: false);
                         }

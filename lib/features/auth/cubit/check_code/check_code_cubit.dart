@@ -4,7 +4,7 @@ import 'check_code_state.dart';
 
 class CheckCodeCubit extends Cubit<CheckCodeState> {
   final AuthRepository authRepository;
-  String? verifiedCode; // ✅ نخزن الكود بعد النجاح
+  String? verifiedCode;
 
   CheckCodeCubit(this.authRepository) : super(CheckCodeInitial());
 
@@ -15,7 +15,7 @@ class CheckCodeCubit extends Cubit<CheckCodeState> {
       final message = await authRepository.checkCode(code);
       print('[CheckCodeCubit] Success: $message');
 
-      verifiedCode = code; // ✅ خزّن الكود بعد النجاح
+      verifiedCode = code;
       emit(CheckCodeSuccess(message));
     } catch (e) {
       print('[CheckCodeCubit] Failure: $e');
