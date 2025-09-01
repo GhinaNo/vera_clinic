@@ -185,7 +185,7 @@ class _AddInvoicePageState extends State<AddInvoicePage> with TickerProviderStat
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add),
                     label: const Text('أضف خدمة'),
-                    onPressed: () => _showServicePickerDialog(services),
+                    onPressed: () => _showServicePickerDialog(services as List<Service>),
                   ),
                 ],
               ),

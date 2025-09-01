@@ -9,6 +9,7 @@ import '../departments/cubit/show_departments/show_departments_cubit.dart';
 import '../departments/models/departments_repository.dart';
 import '../departments/pages/departments_pages.dart';
 import '../services/cubit/ServicesCubit.dart';
+import '../services/models/ServicesRepository.dart';
 import '../services/pages/service_page.dart';
 import '../offers/cubit/offer_cubit.dart';
 import '../offers/pages/offers_page.dart';
@@ -19,7 +20,7 @@ class DashboardPage extends StatefulWidget {
   final String role;
   final String token;
 
-  const DashboardPage({super.key, required this.role, required this.token});
+   DashboardPage({super.key, required this.role, required this.token,});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -94,10 +95,16 @@ class _DashboardPageState extends State<DashboardPage> {
         case 'الأقسام':
           return DepartmentsPage(token: widget.token);
         case 'الخدمات':
-          return BlocProvider.value(
-            value: _departmentsCubit,
-            child: ServicesPage(),
+          return BlocProvider(
+            create: (_) => ServicesCubit(
+              repository: ServicesRepository(token: widget.token),
+            ),
+            child: const ServicesPage(),
           );
+
+
+
+
         case 'العروض':
           return OffersPage();
         case 'المحاسبة':
@@ -200,7 +207,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _departmentsCubit),
-        BlocProvider(create: (_) => ServicesCubit()),
+        BlocProvider.value(value: _departmentsCubit),
         BlocProvider(create: (_) => OffersCubit()),
         BlocProvider(create: (_) => InvoicesCubit()),
         BlocProvider(create: (_) => LogoutCubit(AuthRepository())),
@@ -251,7 +258,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       selectedTileColor: Colors.white.withOpacity(0.2),
                       onTap: () {
                         if (allowedTitles[i] == "تسجيل الخروج") {
-                          _confirmLogout(context); // ➡️ استدعاء Dialog
+                          _confirmLogout(context);
                         } else {
                           setState(() => selectedIndex = i);
                         }

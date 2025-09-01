@@ -16,10 +16,11 @@ class SelectServicesPage extends StatefulWidget {
   State<SelectServicesPage> createState() => _SelectServicesPageState();
 }
 
-class _SelectServicesPageState extends State<SelectServicesPage> with SingleTickerProviderStateMixin {
+class _SelectServicesPageState extends State<SelectServicesPage>
+    with SingleTickerProviderStateMixin {
   late List<Service> uniqueServices;
   late Set<String> selectedIds;
-  String? selectedDepartment;
+  int? selectedDepartmentId;
   String search = '';
 
   late AnimationController _controller;
@@ -47,7 +48,7 @@ class _SelectServicesPageState extends State<SelectServicesPage> with SingleTick
   List<Service> get filteredServices {
     return uniqueServices.where((service) {
       final matchesDepartment =
-          selectedDepartment == null || service.departmentName == selectedDepartment;
+          selectedDepartmentId == null || service.departmentId == selectedDepartmentId;
       final matchesSearch = search.isEmpty ||
           service.name.toLowerCase().contains(search.toLowerCase());
       return matchesDepartment && matchesSearch;
@@ -56,7 +57,7 @@ class _SelectServicesPageState extends State<SelectServicesPage> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    final departments = uniqueServices.map((s) => s.departmentName).toSet().toList();
+    final departments = uniqueServices.map((s) => s.departmentId).toSet().toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -91,25 +92,25 @@ class _SelectServicesPageState extends State<SelectServicesPage> with SingleTick
               children: [
                 ChoiceChip(
                   label: const Text('كل الأقسام'),
-                  selected: selectedDepartment == null,
+                  selected: selectedDepartmentId == null,
                   onSelected: (_) {
                     setState(() {
-                      selectedDepartment = null;
+                      selectedDepartmentId = null;
                       _controller.reset();
                       _controller.forward();
                     });
                   },
                 ),
                 const SizedBox(width: 8),
-                ...departments.map((department) {
+                ...departments.map((departmentId) {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
-                      label: Text(department),
-                      selected: selectedDepartment == department,
+                      label: Text('قسم $departmentId'),
+                      selected: selectedDepartmentId == departmentId,
                       onSelected: (_) {
                         setState(() {
-                          selectedDepartment = department;
+                          selectedDepartmentId = departmentId;
                           _controller.reset();
                           _controller.forward();
                         });
@@ -128,9 +129,9 @@ class _SelectServicesPageState extends State<SelectServicesPage> with SingleTick
               itemCount: filteredServices.length,
               itemBuilder: (context, index) {
                 final service = filteredServices[index];
-                final isSelected = selectedIds.contains(service.id);
+                final serviceIdStr = service.id.toString();
+                final isSelected = selectedIds.contains(serviceIdStr);
 
-                // تحكم في فترة الأنيميشن لكل عنصر (stagger)
                 final start = index * 0.1;
                 final end = start + 0.5;
                 final animation = CurvedAnimation(
@@ -150,24 +151,22 @@ class _SelectServicesPageState extends State<SelectServicesPage> with SingleTick
                       end: Offset.zero,
                     ).animate(animation),
                     child: Card(
-                      key: ValueKey(service.id),
-                      margin:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: CheckboxListTile(
-                        key: ValueKey('checkbox_${service.id}'),
                         title: Text(service.name),
-                        subtitle:
-                        Text('${service.departmentName} | ${service.durationMinutes} دقيقة'),
+                        subtitle: Text(
+                            'القسم: ${service.departmentId} | ${service.duration} دقيقة'),
                         secondary: Text('${service.price.toStringAsFixed(1)} ل.س'),
                         value: isSelected,
                         onChanged: (value) {
                           setState(() {
                             if (value == true) {
-                              selectedIds.add(service.id);
+                              selectedIds.add(serviceIdStr);
                             } else {
-                              selectedIds.remove(service.id);
+                              selectedIds.remove(serviceIdStr);
                             }
                           });
                         },
@@ -192,8 +191,7 @@ class _SelectServicesPageState extends State<SelectServicesPage> with SingleTick
                 }
                 Navigator.pop(context, selectedIds.toList());
               },
-              child:
-              const Text('تأكيد الاختيار', style: TextStyle(color: Colors.white)),
+              child: const Text('تأكيد الاختيار', style: TextStyle(color: Colors.white)),
             ),
           ),
         ],

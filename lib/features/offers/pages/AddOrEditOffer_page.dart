@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:vera_clinic/features/services/models/service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../services/cubit/ServicesCubit.dart';
+import '../../services/cubit/ServicesState.dart';
+import '../../services/models/service.dart';
 import '../model/offersModel.dart';
 import 'SelectServicesPage.dart';
 
@@ -16,17 +17,14 @@ class AddOrEditOfferPage extends StatefulWidget {
   State<AddOrEditOfferPage> createState() => _AddOrEditOfferPageState();
 }
 
-class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> with SingleTickerProviderStateMixin {
+class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
+    with SingleTickerProviderStateMixin {
   final titleController = TextEditingController();
   final discountController = TextEditingController();
   DateTime? startDate;
   DateTime? endDate;
 
   List<String> selectedServiceIds = [];
-
-  late final AnimationController _animationController;
-  late final Animation<double> _fadeAnimation;
-  late final Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
@@ -39,37 +37,6 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> with SingleTick
       endDate = widget.offer!.endDate;
       selectedServiceIds = List.from(widget.offer!.serviceIds);
     }
-
-    discountController.addListener(() {
-      setState(() {});
-    });
-
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-
-    _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeIn,
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    titleController.dispose();
-    discountController.dispose();
-    _animationController.dispose();
-    super.dispose();
   }
 
   Future<void> _pickDate(bool isStart) async {
@@ -98,34 +65,6 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> with SingleTick
         selectedServiceIds.isNotEmpty;
   }
 
-  Future<bool?> _showConfirmDialog(String title, String content) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        backgroundColor: AppColors.offWhite,
-        title: Text(
-          title,
-          style: TextStyle(color: AppColors.purple, fontWeight: FontWeight.bold),
-        ),
-        content: Text(content),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('إلغاء', style: TextStyle(color: AppColors.purple)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.purple,
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('تأكيد', style: TextStyle(color: AppColors.offWhite)),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _saveOffer() async {
     if (!_isFormValid()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -134,222 +73,238 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> with SingleTick
       return;
     }
 
-    final confirm = await _showConfirmDialog(
-      widget.offer == null ? 'تأكيد الإضافة' : 'تأكيد التعديل',
-      widget.offer == null ? 'هل أنت متأكد أنك تريد إضافة هذا العرض؟' : 'هل تريد حفظ التعديلات؟',
+    final newOffer = Offer(
+      id: widget.offer?.id ?? UniqueKey().toString(),
+      title: titleController.text.trim(),
+      discountPercent: double.tryParse(discountController.text) ?? 0,
+      startDate: startDate!,
+      endDate: endDate!,
+      serviceIds: List.from(selectedServiceIds),
     );
 
-    if (confirm == true) {
-      final newOffer = Offer(
-        id: widget.offer?.id ?? UniqueKey().toString(),
-        title: titleController.text.trim(),
-        discountPercent: double.tryParse(discountController.text) ?? 0,
-        startDate: startDate!,
-        endDate: endDate!,
-        serviceIds: List.from(selectedServiceIds),
-      );
-
-      Navigator.pop(context, newOffer);
-    }
+    Navigator.pop(context, newOffer);
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ServicesCubit, List<Service>>(
-      builder: (context, allServices) {
-        if (allServices.isEmpty) {
+    return BlocBuilder<ServicesCubit, ServicesState>(
+      builder: (context, state) {
+        if (state is ServicesInitial || state is ServicesLoading) {
           return Scaffold(
             appBar: AppBar(title: Text(widget.offer == null ? 'إضافة عرض' : 'تعديل عرض')),
             body: const Center(child: CircularProgressIndicator()),
           );
         }
 
+        if (state is ServicesError) {
+          return Scaffold(
+            appBar: AppBar(title: Text(widget.offer == null ? 'إضافة عرض' : 'تعديل عرض')),
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 40),
+                  const SizedBox(height: 8),
+                  Text(state.message ?? 'حدث خطأ أثناء جلب الخدمات'),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => context.read<ServicesCubit>().fetchServices(),
+                    child: const Text('إعادة المحاولة'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // الحالة الناجحة
+        final services = (state as ServicesLoaded).services; // <-- فيها List<Service>
+
         final discountPercent = double.tryParse(discountController.text) ?? 0;
 
         return Scaffold(
           appBar: AppBar(title: Text(widget.offer == null ? 'إضافة عرض' : 'تعديل عرض')),
-          body: FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: InputDecoration(
+                    labelText: 'عنوان العرض',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: discountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: 'نسبة الخصم %',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
                   children: [
-                    TextField(
-                      controller: titleController,
-                      decoration: InputDecoration(
-                        labelText: 'عنوان العرض',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: discountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                      ],
-                      decoration: InputDecoration(
-                        labelText: 'نسبة الخصم %',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => _pickDate(true),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: AppColors.purple),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                startDate == null
-                                    ? 'تاريخ البداية'
-                                    : '${startDate!.year}/${startDate!.month}/${startDate!.day}',
-                              ),
-                            ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _pickDate(true),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.purple),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            startDate == null
+                                ? 'تاريخ البداية'
+                                : '${startDate!.year}/${startDate!.month}/${startDate!.day}',
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => _pickDate(false),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: AppColors.purple),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                endDate == null
-                                    ? 'تاريخ النهاية'
-                                    : '${endDate!.year}/${endDate!.month}/${endDate!.day}',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Text('الخدمات المرتبطة بالعرض:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.list,color: Colors.white,),
-                      label: const Text('اختيار الخدمات', style: TextStyle(color: AppColors.offWhite)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.purple,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      onPressed: () async {
-                        final result = await Navigator.push<List<String>>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => SelectServicesPage(
-                              allServices: allServices,
-                              initiallySelectedIds: selectedServiceIds,
-                            ),
-                          ),
-                        );
-                        if (result != null) {
-                          setState(() {
-                            selectedServiceIds = List.from(result);
-                          });
-                        }
-                      },
                     ),
-                    const SizedBox(height: 12),
-                    if (selectedServiceIds.isEmpty)
-                      const Text('لم يتم اختيار خدمات بعد'),
-                    if (selectedServiceIds.isNotEmpty)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: selectedServiceIds.map((id) {
-                          final service = allServices.firstWhere(
-                                (s) => s.id == id,
-                            orElse: () => Service(
-                              id: '',
-                              name: 'غير معروف',
-                              description: '',
-                              durationMinutes: 0,
-                              price: 0.0,
-                              departmentName: '',
-                              imagePath: '',
-                            ),
-                          );
-
-                          final discountedPrice = service.price * (1 - discountPercent / 100);
-
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            child: ListTile(
-                              title: Text(service.name),
-                              subtitle: Text('${service.departmentName} | ${service.durationMinutes} دقيقة'),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        '${service.price.toStringAsFixed(1)} ل.س',
-                                        style: const TextStyle(
-                                          decoration: TextDecoration.lineThrough,
-                                          color: Colors.redAccent,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      Text(
-                                        '${discountedPrice.toStringAsFixed(1)} ل.س',
-                                        style: const TextStyle(
-                                          color: Colors.green,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 12),
-                                  IconButton(
-                                    icon: const Icon(Icons.close, color: Colors.redAccent),
-                                    onPressed: () {
-                                      setState(() {
-                                        selectedServiceIds.remove(id);
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.purple,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: _saveOffer,
-                        child: Text(
-                          widget.offer == null ? 'إضافة العرض' : 'حفظ التعديلات',
-                          style: const TextStyle(color: AppColors.offWhite, fontSize: 16, fontWeight: FontWeight.bold),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _pickDate(false),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.purple),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            endDate == null
+                                ? 'تاريخ النهاية'
+                                : '${endDate!.year}/${endDate!.month}/${endDate!.day}',
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 16),
+                const Text('الخدمات المرتبطة بالعرض:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.list, color: Colors.white),
+                  label: const Text('اختيار الخدمات', style: TextStyle(color: AppColors.offWhite)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.purple,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () async {
+                    final result = await Navigator.push<List<String>>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SelectServicesPage(
+                          allServices: services,
+                          initiallySelectedIds: selectedServiceIds,
+                        ),
+                      ),
+                    );
+                    if (result != null) {
+                      setState(() {
+                        selectedServiceIds = List.from(result);
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                if (selectedServiceIds.isEmpty)
+                  const Text('لم يتم اختيار خدمات بعد'),
+                if (selectedServiceIds.isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: selectedServiceIds.map((id) {
+                      final service = services.firstWhere(
+                            (s) => s.id.toString() == id,
+                        orElse: () => Service(
+                          id: -1,
+                          name: 'غير معروف',
+                          description: '',
+                          price: 0.0,
+                          duration: 0,
+                          departmentId: 0,
+                          imageUrl: '',
+                        ),
+                      );
+
+                      final discountedPrice = service.price * (1 - discountPercent / 100);
+
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: ListTile(
+                          title: Text(service.name),
+                          subtitle: Text('القسم: ${service.departmentId} | ${service.duration} دقيقة'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '${service.price.toStringAsFixed(1)} ل.س',
+                                    style: const TextStyle(
+                                      decoration: TextDecoration.lineThrough,
+                                      color: Colors.redAccent,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${discountedPrice.toStringAsFixed(1)} ل.س',
+                                    style: const TextStyle(
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 12),
+                              IconButton(
+                                icon: const Icon(Icons.close, color: Colors.redAccent),
+                                onPressed: () {
+                                  setState(() {
+                                    selectedServiceIds.remove(id);
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.purple,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _saveOffer,
+                    child: Text(
+                      widget.offer == null ? 'إضافة العرض' : 'حفظ التعديلات',
+                      style: const TextStyle(
+                        color: AppColors.offWhite,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );

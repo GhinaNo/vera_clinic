@@ -10,6 +10,8 @@ import '../features/home/dashboard_page.dart';
 import '../features/invoices/pages/invoices_list_page.dart';
 import '../features/offers/cubit/offer_cubit.dart';
 import '../features/offers/pages/offers_page.dart';
+import '../features/services/cubit/ServicesCubit.dart';
+import '../features/services/models/ServicesRepository.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -36,7 +38,20 @@ final GoRouter appRouter = GoRouter(
       create: (_) => OffersCubit(),
       child: const OffersPage(),
     )),
-    GoRoute(path: '/services', builder: (context, state) => ServicesPage()),
+    GoRoute(
+      path: '/services',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, String>? ?? {};
+        final token = extra['token'] ?? '';
+
+        return BlocProvider(
+          create: (_) => ServicesCubit(
+            repository: ServicesRepository(token: token),
+          ),
+          child: const ServicesPage(),
+        );
+      },
+    ),
     GoRoute(path: '/invoices', builder: (context, state) => InvoicesListPage()),
   ],
 );

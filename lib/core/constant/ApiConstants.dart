@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String baseUrl = 'http://127.0.0.1:8000';
+  static const String baseUrl = 'http://5.5.5.235:8000';
 
   //log in
   static String adminLoginUrl() => '$baseUrl/web/admin/login';
@@ -19,4 +19,13 @@ class ApiConstants {
   static String deleteDepartmentUrl(int id) => '$baseUrl/web/admin/departments/$id';
   static String showDepartmentsUrl() => '$baseUrl/web/admin/departments';
   static String showDepartmentUrl(int id) => '$baseUrl/web/admin/departments/$id';
+
+
+  // Services
+  static String addServiceUrl() => "$baseUrl/web/add-service";
+  static String updateServiceUrl(int id) => "$baseUrl/web/update-service/$id";
+  static String showServicesUrl() => "$baseUrl/web/services";
+  static String showServiceUrl(int id) => "$baseUrl/web/service/$id";
+  static String deleteServiceUrl(int id) => "$baseUrl/web/delete-service/$id";
+  static String searchServiceUrl() => "$baseUrl/web/search-service";
 }
