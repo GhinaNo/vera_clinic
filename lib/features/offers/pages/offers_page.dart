@@ -3,12 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../cubit/offer_cubit.dart';
+import '../cubit/offer_state.dart';
 import '../model/offersModel.dart';
 import '../widgets/offers_card.dart';
-import 'AddOrEditOffer_page.dart';
-
-import '../cubit/offer_state.dart';
 import '../../services/cubit/ServicesCubit.dart';
+import '../../../core/widgets/custom_toast.dart';
+import 'AddOrEditOffer_page.dart';
 
 class OffersPage extends StatefulWidget {
   const OffersPage({super.key});
@@ -17,10 +17,12 @@ class OffersPage extends StatefulWidget {
   State<OffersPage> createState() => _OffersPageState();
 }
 
-class _OffersPageState extends State<OffersPage> with SingleTickerProviderStateMixin {
+class _OffersPageState extends State<OffersPage>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
-  Future<bool?> _showConfirmDialog(BuildContext context, String title, String content) {
+  Future<bool?> _showConfirmDialog(
+      BuildContext context, String title, String content) {
     return showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -40,28 +42,16 @@ class _OffersPageState extends State<OffersPage> with SingleTickerProviderStateM
     );
   }
 
-  OffersFilter _toOfferFilter(OffersFilter filter) {
-    switch (filter) {
-      case OffersFilter.active:
-        return OffersFilter.active;
-      case OffersFilter.expired:
-        return OffersFilter.expired;
-      case OffersFilter.all:
-      default:
-        return OffersFilter.all;
-    }
-  }
-
-  OffersFilter _toOffersFilter(OffersFilter filter) => _toOfferFilter(filter);
-
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
-    );
-    _controller.forward();
+    )..forward();
+
+    /// جلب العروض عند الدخول
+    context.read<OffersCubit>().loadOffers();
   }
 
   @override
@@ -72,7 +62,15 @@ class _OffersPageState extends State<OffersPage> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<OffersCubit, OffersState>(
+    return BlocConsumer<OffersCubit, OffersState>(
+      listener: (context, state) {
+        if (state.successMessage != null) {
+          showCustomToast(context, state.successMessage!, success: true);
+        }
+        if (state.errorMessage != null) {
+          showCustomToast(context, state.errorMessage!);
+        }
+      },
       builder: (context, state) {
         return Padding(
           padding: const EdgeInsets.all(16),
@@ -89,9 +87,10 @@ class _OffersPageState extends State<OffersPage> with SingleTickerProviderStateM
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: DropdownButton<OffersFilter>(
-                      value: _toOfferFilter(state.filter),
+                      value: state.filter,
                       underline: const SizedBox(),
-                      style: TextStyle(color: AppColors.purple, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          color: AppColors.purple, fontWeight: FontWeight.bold),
                       dropdownColor: AppColors.offWhite,
                       items: const [
                         DropdownMenuItem(value: OffersFilter.all, child: Text('الكل')),
@@ -100,9 +99,8 @@ class _OffersPageState extends State<OffersPage> with SingleTickerProviderStateM
                       ],
                       onChanged: (value) {
                         if (value != null) {
-                          context.read<OffersCubit>().setFilter(_toOffersFilter(value));
-                          _controller.reset();
-                          _controller.forward();
+                          context.read<OffersCubit>().setFilter(value);
+                          _controller..reset()..forward();
                         }
                       },
                     ),
@@ -115,14 +113,13 @@ class _OffersPageState extends State<OffersPage> with SingleTickerProviderStateM
                         MaterialPageRoute(
                           builder: (_) => BlocProvider.value(
                             value: context.read<ServicesCubit>(),
-                            child: const AddOrEditOfferPage(),
+                            child: AddOrEditOfferPage(), // ✅ بدون const
                           ),
                         ),
                       );
                       if (newOffer != null) {
                         context.read<OffersCubit>().addOffer(newOffer);
-                        _controller.reset();
-                        _controller.forward();
+                        _controller..reset()..forward();
                       }
                     },
                     icon: const Icon(Icons.add, color: Colors.white),
@@ -139,7 +136,6 @@ class _OffersPageState extends State<OffersPage> with SingleTickerProviderStateM
                   itemCount: state.filteredOffers.length,
                   itemBuilder: (context, index) {
                     final offer = state.filteredOffers[index];
-
                     final start = index * 0.1;
                     final end = start + 0.5;
                     final animation = CurvedAnimation(
@@ -166,7 +162,7 @@ class _OffersPageState extends State<OffersPage> with SingleTickerProviderStateM
                               MaterialPageRoute(
                                 builder: (_) => BlocProvider.value(
                                   value: context.read<ServicesCubit>(),
-                                  child: AddOrEditOfferPage(offer: offer),
+                                  child: AddOrEditOfferPage(offer: offer), // ✅ بدون const
                                 ),
                               ),
                             );
@@ -178,7 +174,7 @@ class _OffersPageState extends State<OffersPage> with SingleTickerProviderStateM
                             final confirm = await _showConfirmDialog(
                                 context, 'تأكيد الحذف', 'هل أنت متأكد من حذف العرض؟');
                             if (confirm == true) {
-                              context.read<OffersCubit>().deleteOffer(offer);
+                              context.read<OffersCubit>().deleteOffer(offer.id);
                             }
                           },
                         ),

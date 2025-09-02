@@ -8,6 +8,7 @@ import '../auth/repository/auth_repository.dart';
 import '../departments/cubit/show_departments/show_departments_cubit.dart';
 import '../departments/models/departments_repository.dart';
 import '../departments/pages/departments_pages.dart';
+import '../offers/model/offers_repository.dart';
 import '../services/cubit/ServicesCubit.dart';
 import '../services/models/ServicesRepository.dart';
 import '../services/pages/service_page.dart';
@@ -101,12 +102,25 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             child: const ServicesPage(),
           );
-
-
-
-
         case 'العروض':
-          return OffersPage();
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) => ServicesCubit(
+                  repository: ServicesRepository(token: widget.token),
+                )..fetchServices(),
+              ),
+              BlocProvider(
+                create: (_) => OffersCubit(
+                  repository: OffersRepository(token: widget.token),
+                ),
+              ),
+            ],
+            child: OffersPage(),
+          );
+
+
+
         case 'المحاسبة':
           return InvoicesListPage();
         case 'تسجيل الخروج':
@@ -208,7 +222,12 @@ class _DashboardPageState extends State<DashboardPage> {
       providers: [
         BlocProvider.value(value: _departmentsCubit),
         BlocProvider.value(value: _departmentsCubit),
-        BlocProvider(create: (_) => OffersCubit()),
+        BlocProvider(
+        create: (_) => OffersCubit(
+        repository: OffersRepository(token: widget.token),
+        ),
+        child: const OffersPage(),
+        ),
         BlocProvider(create: (_) => InvoicesCubit()),
         BlocProvider(create: (_) => LogoutCubit(AuthRepository())),
       ],

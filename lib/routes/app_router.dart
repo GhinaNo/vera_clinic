@@ -9,6 +9,7 @@ import '../features/auth/screens/reset_password_screen.dart';
 import '../features/home/dashboard_page.dart';
 import '../features/invoices/pages/invoices_list_page.dart';
 import '../features/offers/cubit/offer_cubit.dart';
+import '../features/offers/model/offers_repository.dart';
 import '../features/offers/pages/offers_page.dart';
 import '../features/services/cubit/ServicesCubit.dart';
 import '../features/services/models/ServicesRepository.dart';
@@ -34,10 +35,20 @@ final GoRouter appRouter = GoRouter(
       final token = extra['token'] ?? '';
       return DepartmentsPage(token: token);
     }),
-    GoRoute(path: '/offers', builder: (context, state) => BlocProvider(
-      create: (_) => OffersCubit(),
-      child: const OffersPage(),
-    )),
+    GoRoute(
+      path: '/offers',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, String>? ?? {};
+        final token = extra['token'] ?? '';
+
+        return BlocProvider(
+          create: (_) => OffersCubit(
+            repository: OffersRepository(token: token),
+          ),
+          child: const OffersPage(),
+        );
+      },
+    ),
     GoRoute(
       path: '/services',
       builder: (context, state) {

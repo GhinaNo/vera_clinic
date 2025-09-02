@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../core/theme/app_theme.dart';
 import '../../services/cubit/ServicesCubit.dart';
 import '../../services/cubit/ServicesState.dart';
@@ -73,19 +74,31 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
       return;
     }
 
+    List<String> finalServiceIds;
+    if (widget.offer != null) {
+      finalServiceIds = selectedServiceIds.isEmpty
+          ? List.from(widget.offer!.serviceIds)
+          : List.from(selectedServiceIds);
+    } else {
+      finalServiceIds = List.from(selectedServiceIds);
+    }
+
     final newOffer = Offer(
       id: widget.offer?.id ?? UniqueKey().toString(),
       title: titleController.text.trim(),
       discountPercent: double.tryParse(discountController.text) ?? 0,
       startDate: startDate!,
       endDate: endDate!,
-      serviceIds: List.from(selectedServiceIds),
+      serviceIds: finalServiceIds,
     );
+
+    print(widget.offer == null
+        ? 'Adding new offer: ${newOffer.toJson()}'
+        : 'Updating offer: ${newOffer.toJson()}');
 
     Navigator.pop(context, newOffer);
   }
 
-  @override
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ServicesCubit, ServicesState>(
@@ -118,9 +131,7 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
           );
         }
 
-        // الحالة الناجحة
-        final services = (state as ServicesLoaded).services; // <-- فيها List<Service>
-
+        final services = (state as ServicesLoaded).services;
         final discountPercent = double.tryParse(discountController.text) ?? 0;
 
         return Scaffold(
@@ -141,9 +152,7 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
                 TextField(
                   controller: discountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                  ],
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
                   decoration: InputDecoration(
                     labelText: 'نسبة الخصم %',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -217,8 +226,7 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
                   },
                 ),
                 const SizedBox(height: 12),
-                if (selectedServiceIds.isEmpty)
-                  const Text('لم يتم اختيار خدمات بعد'),
+                if (selectedServiceIds.isEmpty) const Text('لم يتم اختيار خدمات بعد'),
                 if (selectedServiceIds.isNotEmpty)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

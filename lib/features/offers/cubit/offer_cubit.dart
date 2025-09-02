@@ -1,33 +1,59 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../model/offersModel.dart';
+import '../model/offers_repository.dart';
 import 'offer_state.dart';
 
 class OffersCubit extends Cubit<OffersState> {
-  OffersCubit() : super(OffersState(offers: []));
+  final OffersRepository repository;
 
-  void loadOffers(List<Offer> newOffers) {
-    emit(state.copyWith(offers: newOffers));
+  OffersCubit({required this.repository}) : super(OffersState(offers: []));
+
+  Future<void> loadOffers({String status = 'all'}) async {
+    try {
+      final offers = await repository.fetchOffers(status: status);
+      emit(state.copyWith(offers: offers));
+    } catch (e) {
+      emit(state.copyWith(errorMessage: 'فشل في تحميل العروض'));
+    }
   }
 
-  void addOffer(Offer offer) {
-    final updatedList = List<Offer>.from(state.offers)..add(offer);
-    emit(state.copyWith(offers: updatedList));
+  Future<void> addOffer(Offer offer) async {
+    try {
+      final added = await repository.addOffer(offer);
+      final updatedList = List<Offer>.from(state.offers)..add(added);
+      emit(state.copyWith(
+        offers: updatedList,
+        successMessage: 'تمت إضافة العرض بنجاح',
+      ));
+    } catch (e) {
+      emit(state.copyWith(errorMessage: 'فشل في إضافة العرض'));
+    }
   }
 
-  void updateOffer(Offer updatedOffer) {
-    final updatedList = state.offers.map((offer) {
-      return offer.id == updatedOffer.id ? updatedOffer : offer;
-    }).toList();
-
-    emit(state.copyWith(offers: updatedList));
+  Future<void> updateOffer(Offer offer) async {
+    try {
+      final updated = await repository.updateOffer(offer);
+      final updatedList = state.offers.map((o) => o.id == updated.id ? updated : o).toList();
+      emit(state.copyWith(
+        offers: updatedList,
+        successMessage: 'تم تعديل العرض بنجاح',
+      ));
+    } catch (e) {
+      emit(state.copyWith(errorMessage: 'فشل في تعديل العرض'));
+    }
   }
 
-  void deleteOffer(Offer offerToDelete) {
-    final updatedList = state.offers
-        .where((offer) => offer.id != offerToDelete.id)
-        .toList();
-
-    emit(state.copyWith(offers: updatedList));
+  Future<void> deleteOffer(String id) async {
+    try {
+      await repository.deleteOffer(id);
+      final updatedList = state.offers.where((o) => o.id != id).toList();
+      emit(state.copyWith(
+        offers: updatedList,
+        successMessage: 'تم حذف العرض بنجاح',
+      ));
+    } catch (e) {
+      emit(state.copyWith(errorMessage: 'فشل في حذف العرض'));
+    }
   }
 
   void setFilter(OffersFilter filter) {
