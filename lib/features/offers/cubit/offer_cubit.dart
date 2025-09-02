@@ -20,7 +20,7 @@ class OffersCubit extends Cubit<OffersState> {
   Future<void> addOffer(Offer offer) async {
     try {
       final added = await repository.addOffer(offer);
-      final updatedList = List<Offer>.from(state.offers)..add(added);
+      final updatedList = [added, ...state.offers];
       emit(state.copyWith(
         offers: updatedList,
         successMessage: 'تمت إضافة العرض بنجاح',

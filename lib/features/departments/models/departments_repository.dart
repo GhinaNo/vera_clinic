@@ -35,7 +35,7 @@ class DepartmentsRepository {
       final decoded = jsonDecode(response.body);
       final data = decoded['data'] ?? {};
       return Department(
-        id: data['id'], // ← أضفنا الـ id هنا
+        id: data['id'],
         name: data['name'] ?? department.name,
         suite_no: data['suite_no'] ?? department.suite_no,
         description: data['description'] ?? department.description,

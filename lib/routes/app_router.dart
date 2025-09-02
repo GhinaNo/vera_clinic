@@ -1,11 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vera_clinic/features/departments/pages/departments_pages.dart';
+import 'package:vera_clinic/features/employee/employee_cubit.dart';
 import 'package:vera_clinic/features/services/pages/service_page.dart';
 import '../features/auth/login_page.dart';
 import '../features/auth/screens/check_code_screen.dart';
 import '../features/auth/screens/forget_password_screen.dart';
 import '../features/auth/screens/reset_password_screen.dart';
+import '../features/employee/employee_management_page (1).dart';
 import '../features/home/dashboard_page.dart';
 import '../features/invoices/pages/invoices_list_page.dart';
 import '../features/offers/cubit/offer_cubit.dart';
@@ -63,6 +65,22 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
+    GoRoute(
+      path: '/employees',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, String>? ?? {};
+        final token = extra['token'] ?? '';
+
+        return BlocProvider(
+          create: (_) => EmployeeCubit()..fetchEmployees(
+            extraHeaders: {'Authorization': 'Bearer $token'},
+          ),
+          child: const EmployeePage(),
+        );
+      },
+    ),
+
+
     GoRoute(path: '/invoices', builder: (context, state) => InvoicesListPage()),
   ],
 );

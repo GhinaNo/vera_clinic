@@ -74,13 +74,16 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
       return;
     }
 
-    List<String> finalServiceIds;
-    if (widget.offer != null) {
-      finalServiceIds = selectedServiceIds.isEmpty
-          ? List.from(widget.offer!.serviceIds)
-          : List.from(selectedServiceIds);
-    } else {
-      finalServiceIds = List.from(selectedServiceIds);
+    // فلترة الخدمات الصالحة فقط
+    final validServiceIds = selectedServiceIds
+        .where((id) => int.tryParse(id) != null && int.parse(id) > 0)
+        .toList();
+
+    if (validServiceIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار خدمة واحدة على الأقل صالحة')),
+      );
+      return;
     }
 
     final newOffer = Offer(
@@ -89,7 +92,7 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
       discountPercent: double.tryParse(discountController.text) ?? 0,
       startDate: startDate!,
       endDate: endDate!,
-      serviceIds: finalServiceIds,
+      serviceIds: validServiceIds, // إرسال الخدمات الصحيحة فقط
     );
 
     print(widget.offer == null
@@ -131,7 +134,25 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
           );
         }
 
-        final services = (state as ServicesLoaded).services;
+        final apiServices = List<Service>.from((state as ServicesLoaded).services);
+
+        final mergedServices = List<Service>.from(apiServices);
+        if (widget.offer != null) {
+          for (var id in widget.offer!.serviceIds) {
+            if (!mergedServices.any((s) => s.id.toString() == id)) {
+              mergedServices.add(Service(
+                id: int.tryParse(id) ?? -1,
+                name: 'غير معروف',
+                description: '',
+                price: 0.0,
+                duration: 0,
+                departmentId: 0,
+                imageUrl: '',
+              ));
+            }
+          }
+        }
+
         final discountPercent = double.tryParse(discountController.text) ?? 0;
 
         return Scaffold(
@@ -141,6 +162,7 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // العنوان
                 TextField(
                   controller: titleController,
                   decoration: InputDecoration(
@@ -149,6 +171,7 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
                   ),
                 ),
                 const SizedBox(height: 12),
+                // نسبة الخصم
                 TextField(
                   controller: discountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -213,7 +236,7 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
                       context,
                       MaterialPageRoute(
                         builder: (_) => SelectServicesPage(
-                          allServices: services,
+                          allServices: mergedServices, // ✅ قائمة مدمجة
                           initiallySelectedIds: selectedServiceIds,
                         ),
                       ),
@@ -231,7 +254,7 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: selectedServiceIds.map((id) {
-                      final service = services.firstWhere(
+                      final service = mergedServices.firstWhere(
                             (s) => s.id.toString() == id,
                         orElse: () => Service(
                           id: -1,

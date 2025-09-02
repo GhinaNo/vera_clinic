@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:vera_clinic/features/employee/employee_cubit.dart';
 import '../../core/services/token_storage.dart';
 import '../../core/theme/app_theme.dart';
 import '../auth/cubit/log_out/logout_cubit.dart';
@@ -8,6 +9,7 @@ import '../auth/repository/auth_repository.dart';
 import '../departments/cubit/show_departments/show_departments_cubit.dart';
 import '../departments/models/departments_repository.dart';
 import '../departments/pages/departments_pages.dart';
+import '../employee/employee_management_page (1).dart';
 import '../offers/model/offers_repository.dart';
 import '../services/cubit/ServicesCubit.dart';
 import '../services/models/ServicesRepository.dart';
@@ -21,7 +23,7 @@ class DashboardPage extends StatefulWidget {
   final String role;
   final String token;
 
-   DashboardPage({super.key, required this.role, required this.token,});
+  DashboardPage({super.key, required this.role, required this.token,});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -118,7 +120,13 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
             child: OffersPage(),
           );
-
+        case 'الموظفون':
+          return BlocProvider(
+            create: (_) => EmployeeCubit()..fetchEmployees(
+              extraHeaders: {'Authorization': 'Bearer ${widget.token}'},
+            ),
+            child: const EmployeePage(),
+          );
 
 
         case 'المحاسبة':
@@ -223,10 +231,10 @@ class _DashboardPageState extends State<DashboardPage> {
         BlocProvider.value(value: _departmentsCubit),
         BlocProvider.value(value: _departmentsCubit),
         BlocProvider(
-        create: (_) => OffersCubit(
-        repository: OffersRepository(token: widget.token),
-        ),
-        child: const OffersPage(),
+          create: (_) => OffersCubit(
+            repository: OffersRepository(token: widget.token),
+          ),
+          child: const OffersPage(),
         ),
         BlocProvider(create: (_) => InvoicesCubit()),
         BlocProvider(create: (_) => LogoutCubit(AuthRepository())),

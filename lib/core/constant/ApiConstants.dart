@@ -36,7 +36,7 @@ class ApiConstants {
   static String showOfferUrl(int id) => '$baseUrl/web/offer/$id';
   static String addOfferUrl() => '$baseUrl/web/add-offer';
   static String updateOfferUrl(int id) => '$baseUrl/web/update-offer/$id';
-  static String deleteOfferUrl(int id) => '$baseUrl/web/delete-offer/$id';
+  static String deleteOfferUrl(int id) => '$baseUrl/delete-offer/$id';
 
 
 }
