@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
-import '../cubit/invoices_cubit.dart';
+import '../cubit_invoices/invoices_cubit.dart';
 import '../models/invoice_model.dart';
-import '../models/payment.dart';
+import '../models/payment_model.dart';
 import '../../../core/theme/app_theme.dart';
 
 class InvoiceDetailsPage extends StatefulWidget {

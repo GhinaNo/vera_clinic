@@ -3,12 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:uuid/uuid.dart';
-import 'package:vera_clinic/features/invoices/cubit/invoices_cubit.dart';
 import 'package:vera_clinic/features/invoices/models/invoice_model.dart';
 import 'package:vera_clinic/features/services/cubit/ServicesCubit.dart';
 import 'package:vera_clinic/features/services/models/service.dart';
+import '../cubit_invoices/invoices_cubit.dart';
 import '../models/InvoiceItem.dart';
-import '../models/payment.dart';
+import '../models/payment_model.dart';
 
 class AddInvoicePage extends StatefulWidget {
   const AddInvoicePage({super.key});

@@ -79,7 +79,6 @@ class EmployeeUpdateError extends EmployeeState {
   List<Object?> get props => [message];
 }
 
-// الموظفون المؤرشفون
 class ArchivedEmployeesLoading extends EmployeeState {
   const ArchivedEmployeesLoading();
 }
@@ -124,7 +123,6 @@ class EmployeeArchiveError extends EmployeeState {
   List<Object?> get props => [message];
 }
 
-// البحث عن موظف
 class EmployeeSearching extends EmployeeState {
   const EmployeeSearching();
 }

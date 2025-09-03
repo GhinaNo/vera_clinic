@@ -6,17 +6,20 @@ import '../../core/services/token_storage.dart';
 import '../../core/theme/app_theme.dart';
 import '../auth/cubit/log_out/logout_cubit.dart';
 import '../auth/repository/auth_repository.dart';
+import '../clients/cubit_client/user_cubit.dart';
+import '../clients/model/user_repository.dart';
+import '../clients/pages/clients_page.dart';
 import '../departments/cubit/show_departments/show_departments_cubit.dart';
 import '../departments/models/departments_repository.dart';
 import '../departments/pages/departments_pages.dart';
 import '../employee/employee_management_page (1).dart';
+import '../invoices/cubit_invoices/invoices_cubit.dart';
 import '../offers/model/offers_repository.dart';
 import '../services/cubit/ServicesCubit.dart';
 import '../services/models/ServicesRepository.dart';
 import '../services/pages/service_page.dart';
 import '../offers/cubit/offer_cubit.dart';
 import '../offers/pages/offers_page.dart';
-import '../invoices/cubit/invoices_cubit.dart';
 import '../invoices/pages/invoices_list_page.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -43,13 +46,14 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
 
+    // تحديد العناوين والأيقونات حسب الدور
     if (widget.role == 'admin') {
       allowedTitles = [
         'الأقسام',
         'الخدمات',
         'العروض',
         'المحاسبة',
-        'الزبائن',
+        'العملاء',
         'المواعيد',
         'الحجوزات',
         'الإدارة',
@@ -73,7 +77,7 @@ class _DashboardPageState extends State<DashboardPage> {
     } else {
       allowedTitles = [
         'المحاسبة',
-        'الزبائن',
+        'العملاء',
         'المواعيد',
         'الحجوزات',
         'الإشعارات',
@@ -93,6 +97,7 @@ class _DashboardPageState extends State<DashboardPage> {
       repository: DepartmentsRepository(token: widget.token),
     )..fetchDepartments();
 
+    // تحديد محتوى كل صفحة
     allowedContent = allowedTitles.map((t) {
       switch (t) {
         case 'الأقسام':
@@ -118,7 +123,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
             ],
-            child: OffersPage(),
+            child: const OffersPage(),
           );
         case 'الموظفون':
           return BlocProvider(
@@ -127,10 +132,21 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             child: const EmployeePage(),
           );
-
+        case 'العملاء':
+          return BlocProvider(
+            create: (_) => ClientCubit(
+              repository: ClientRepository(token: widget.token),
+            )..fetchClients(),
+            child: Builder(
+              builder: (context) {
+                final clientCubit = context.read<ClientCubit>();
+                return ClientPage(cubit: clientCubit);
+              },
+            ),
+          );
 
         case 'المحاسبة':
-          return InvoicesListPage();
+          return const InvoicesListPage();
         case 'تسجيل الخروج':
           return _buildLogoutPage();
         default:
@@ -229,13 +245,9 @@ class _DashboardPageState extends State<DashboardPage> {
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _departmentsCubit),
-        BlocProvider.value(value: _departmentsCubit),
-        BlocProvider(
-          create: (_) => OffersCubit(
-            repository: OffersRepository(token: widget.token),
-          ),
-          child: const OffersPage(),
-        ),
+        BlocProvider(create: (_) => OffersCubit(
+          repository: OffersRepository(token: widget.token),
+        )),
         BlocProvider(create: (_) => InvoicesCubit()),
         BlocProvider(create: (_) => LogoutCubit(AuthRepository())),
       ],

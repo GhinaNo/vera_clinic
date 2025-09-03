@@ -174,7 +174,9 @@ class _OffersPageState extends State<OffersPage>
                             final confirm = await _showConfirmDialog(
                                 context, 'تأكيد الحذف', 'هل أنت متأكد من حذف العرض؟');
                             if (confirm == true) {
+
                               context.read<OffersCubit>().deleteOffer(offer.id);
+                              print("doneeee");
                             }
                           },
                         ),

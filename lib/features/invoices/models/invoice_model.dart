@@ -1,5 +1,5 @@
 import 'package:uuid/uuid.dart';
-import 'package:vera_clinic/features/invoices/models/payment.dart';
+import 'package:vera_clinic/features/invoices/models/payment_model.dart';
 import 'InvoiceItem.dart';
 
 class Invoice {

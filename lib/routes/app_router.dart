@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vera_clinic/features/departments/pages/departments_pages.dart';
@@ -7,6 +8,9 @@ import '../features/auth/login_page.dart';
 import '../features/auth/screens/check_code_screen.dart';
 import '../features/auth/screens/forget_password_screen.dart';
 import '../features/auth/screens/reset_password_screen.dart';
+import '../features/clients/cubit_client/user_cubit.dart';
+import '../features/clients/model/user_repository.dart';
+import '../features/clients/pages/clients_page.dart';
 import '../features/employee/employee_management_page (1).dart';
 import '../features/home/dashboard_page.dart';
 import '../features/invoices/pages/invoices_list_page.dart';
@@ -26,6 +30,26 @@ final GoRouter appRouter = GoRouter(
       final code = state.extra as String? ?? '';
       return ResetPasswordScreen(code: code);
     }),
+
+    GoRoute(
+      path: '/users',
+      builder: (context, state) {
+        final token = (state.extra as Map<String, String>? ?? {})['token'] ?? '';
+        return BlocProvider(
+          create: (_) => ClientCubit(
+            repository: ClientRepository(token: token),
+          )..fetchClients(),
+          child: Builder(
+            builder: (context) {
+              final clientCubit = context.read<ClientCubit>();
+              return ClientPage(cubit: clientCubit);
+            },
+          ),
+        );
+      },
+    ),
+
+
     GoRoute(path: '/home', builder: (context, state) {
       final extra = state.extra as Map<String, String>? ?? {};
       final role = extra['role'] ?? 'receptionist';

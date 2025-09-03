@@ -121,23 +121,42 @@ class OffersRepository {
   // حذف عرض
   Future<void> deleteOffer(String id) async {
     final url = Uri.parse(ApiConstants.deleteOfferUrl(int.parse(id)));
-    print('Deleting offer with ID: $id from $url');
+    print('--- DELETE OFFER START ---');
+    print('Offer ID: $id');
+    print('URL: $url');
+    print('Headers: $_headers');
 
-    final response = await http.delete(url, headers: _headers);
-    print('Response status code: ${response.statusCode}');
-    print('Response body: ${response.body}');
+    try {
+      final response = await http.delete(url, headers: _headers);
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['status'] != 1) {
-        print('Failed to delete offer: ${data['message']}');
-        throw Exception(data['message'] ?? 'Failed to delete offer');
+      print('Response status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('Decoded response: $data');
+
+        if (data['status'] == 1) {
+          print('✅ Offer deleted successfully on server');
+        } else {
+          print('❌ Failed to delete offer on server: ${data['message']}');
+          throw Exception(data['message'] ?? 'Failed to delete offer');
+        }
+      } else if (response.statusCode == 404) {
+        print('❌ Not found - Check your URL or ID');
+        throw Exception('Offer not found');
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        print('❌ Unauthorized - Check your token or permissions');
+        throw Exception('Unauthorized');
       } else {
-        print('Offer deleted successfully');
+        print('❌ HTTP error: ${response.statusCode}');
+        throw Exception('Failed to delete offer: ${response.statusCode}');
       }
-    } else {
-      print('HTTP error while deleting offer: ${response.statusCode}');
-      throw Exception('Failed to delete offer: ${response.statusCode}');
+    } catch (e) {
+      print('Exception during deleteOffer: $e');
+      rethrow;
+    } finally {
+      print('--- DELETE OFFER END ---');
     }
   }
 }

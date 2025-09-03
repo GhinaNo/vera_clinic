@@ -239,8 +239,7 @@ class _ServicesPageState extends State<ServicesPage> {
                     child: TextField(
                       controller: searchController,
                       decoration: InputDecoration(
-                        hintText: "ابحث عن خدمة...",
-                        prefixIcon: const Icon(Icons.search),
+                        hintText: "🔍 ابحث  عن خدمة...",
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
