@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../../../core/theme/app_theme.dart';
 import '../cubit/offer_cubit.dart';
 import '../cubit/offer_state.dart';
@@ -162,7 +161,7 @@ class _OffersPageState extends State<OffersPage>
                               MaterialPageRoute(
                                 builder: (_) => BlocProvider.value(
                                   value: context.read<ServicesCubit>(),
-                                  child: AddOrEditOfferPage(offer: offer), // ✅ بدون const
+                                  child: AddOrEditOfferPage(offer: offer),
                                 ),
                               ),
                             );

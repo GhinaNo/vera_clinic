@@ -1,5 +1,3 @@
-import '../../../core/constant/ApiConstants.dart';
-
 class Service {
   final int id;
   final String name;
@@ -8,6 +6,7 @@ class Service {
   final int duration;
   final int departmentId;
   final String? imageUrl;
+  final double? discountedPrice; // موجود فقط لو جاي من pivot (عروض)
 
   Service({
     required this.id,
@@ -17,25 +16,10 @@ class Service {
     required this.duration,
     required this.departmentId,
     this.imageUrl,
+    this.discountedPrice,
   });
 
   factory Service.fromJson(Map<String, dynamic> json) {
-    final rawImage = json['image'];
-    String? fullImageUrl;
-
-    if (rawImage != null && rawImage.toString().isNotEmpty) {
-      final safePath = rawImage.toString().replaceAll(r'\', '/');
-
-      // إذا الرابط كامل، نستخدمه كما هو
-      if (safePath.startsWith('http')) {
-        fullImageUrl = safePath;
-      } else {
-        fullImageUrl = "${ApiConstants.baseUrl}/storage/$safePath";
-      }
-
-      print("🖼️ Image URL: $fullImageUrl"); // للمراجعة أثناء التطوير
-    }
-
     return Service(
       id: json['id'] is String ? int.parse(json['id']) : json['id'],
       name: json['name'] ?? '',
@@ -45,7 +29,20 @@ class Service {
       departmentId: json['department_id'] is String
           ? int.tryParse(json['department_id']) ?? 0
           : json['department_id'] ?? 0,
-      imageUrl: fullImageUrl,
+      imageUrl: json['image'], // بالباك إند بيرجع رابط كامل ✔
+      discountedPrice: json['pivot']?['discounted_price'] != null
+          ? double.tryParse(json['pivot']['discounted_price'].toString())
+          : null,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'description': description,
+    'price': price,
+    'duration': duration,
+    'department_id': departmentId,
+    'image': imageUrl,
+  };
 }

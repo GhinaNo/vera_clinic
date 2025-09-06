@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../../../core/theme/app_theme.dart';
 import '../../services/cubit/ServicesCubit.dart';
 import '../../services/cubit/ServicesState.dart';
@@ -18,26 +17,36 @@ class AddOrEditOfferPage extends StatefulWidget {
   State<AddOrEditOfferPage> createState() => _AddOrEditOfferPageState();
 }
 
-class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
-    with SingleTickerProviderStateMixin {
+class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> {
   final titleController = TextEditingController();
   final discountController = TextEditingController();
   DateTime? startDate;
   DateTime? endDate;
+  List<Service> selectedServices = [];
 
-  List<String> selectedServiceIds = [];
+  double get discountPercent =>
+      double.tryParse(discountController.text) ?? 0;
 
   @override
   void initState() {
     super.initState();
-
     if (widget.offer != null) {
       titleController.text = widget.offer!.title;
       discountController.text = widget.offer!.discountPercent.toString();
       startDate = widget.offer!.startDate;
       endDate = widget.offer!.endDate;
-      selectedServiceIds = List.from(widget.offer!.serviceIds);
+      selectedServices = List.from(widget.offer!.services);
     }
+    discountController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    discountController.dispose();
+    titleController.dispose();
+    super.dispose();
   }
 
   Future<void> _pickDate(bool isStart) async {
@@ -49,11 +58,8 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
     );
     if (picked != null) {
       setState(() {
-        if (isStart) {
-          startDate = picked;
-        } else {
-          endDate = picked;
-        }
+        if (isStart) startDate = picked;
+        else endDate = picked;
       });
     }
   }
@@ -63,7 +69,7 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
         discountController.text.trim().isNotEmpty &&
         startDate != null &&
         endDate != null &&
-        selectedServiceIds.isNotEmpty;
+        selectedServices.isNotEmpty;
   }
 
   Future<void> _saveOffer() async {
@@ -74,32 +80,21 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
       return;
     }
 
-    // فلترة الخدمات الصالحة فقط
-    final validServiceIds = selectedServiceIds
-        .where((id) => int.tryParse(id) != null && int.parse(id) > 0)
-        .toList();
-
-    if (validServiceIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار خدمة واحدة على الأقل صالحة')),
-      );
-      return;
-    }
-
     final newOffer = Offer(
       id: widget.offer?.id ?? UniqueKey().toString(),
       title: titleController.text.trim(),
-      discountPercent: double.tryParse(discountController.text) ?? 0,
+      discountPercent: discountPercent,
       startDate: startDate!,
       endDate: endDate!,
-      serviceIds: validServiceIds, // إرسال الخدمات الصحيحة فقط
+      services: selectedServices,
     );
 
-    print(widget.offer == null
-        ? 'Adding new offer: ${newOffer.toJson()}'
-        : 'Updating offer: ${newOffer.toJson()}');
-
     Navigator.pop(context, newOffer);
+  }
+
+  double _applyDiscount(double price) {
+    if (discountPercent <= 0) return price;
+    return price * (1 - discountPercent / 100);
   }
 
   @override
@@ -136,25 +131,6 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
 
         final apiServices = List<Service>.from((state as ServicesLoaded).services);
 
-        final mergedServices = List<Service>.from(apiServices);
-        if (widget.offer != null) {
-          for (var id in widget.offer!.serviceIds) {
-            if (!mergedServices.any((s) => s.id.toString() == id)) {
-              mergedServices.add(Service(
-                id: int.tryParse(id) ?? -1,
-                name: 'غير معروف',
-                description: '',
-                price: 0.0,
-                duration: 0,
-                departmentId: 0,
-                imageUrl: '',
-              ));
-            }
-          }
-        }
-
-        final discountPercent = double.tryParse(discountController.text) ?? 0;
-
         return Scaffold(
           appBar: AppBar(title: Text(widget.offer == null ? 'إضافة عرض' : 'تعديل عرض')),
           body: SingleChildScrollView(
@@ -162,7 +138,6 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // العنوان
                 TextField(
                   controller: titleController,
                   decoration: InputDecoration(
@@ -171,7 +146,6 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
                   ),
                 ),
                 const SizedBox(height: 12),
-                // نسبة الخصم
                 TextField(
                   controller: discountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -232,80 +206,68 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () async {
-                    final result = await Navigator.push<List<String>>(
+                    final result = await Navigator.push<List<Service>>(
                       context,
                       MaterialPageRoute(
                         builder: (_) => SelectServicesPage(
-                          allServices: mergedServices, // ✅ قائمة مدمجة
-                          initiallySelectedIds: selectedServiceIds,
+                          allServices: apiServices,
+                          initiallySelectedServices: selectedServices,
                         ),
                       ),
                     );
                     if (result != null) {
                       setState(() {
-                        selectedServiceIds = List.from(result);
+                        selectedServices = List.from(result);
                       });
                     }
                   },
                 ),
                 const SizedBox(height: 12),
-                if (selectedServiceIds.isEmpty) const Text('لم يتم اختيار خدمات بعد'),
-                if (selectedServiceIds.isNotEmpty)
+                if (selectedServices.isEmpty) const Text('لم يتم اختيار خدمات بعد'),
+                if (selectedServices.isNotEmpty)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: selectedServiceIds.map((id) {
-                      final service = mergedServices.firstWhere(
-                            (s) => s.id.toString() == id,
-                        orElse: () => Service(
-                          id: -1,
-                          name: 'غير معروف',
-                          description: '',
-                          price: 0.0,
-                          duration: 0,
-                          departmentId: 0,
-                          imageUrl: '',
-                        ),
-                      );
-
-                      final discountedPrice = service.price * (1 - discountPercent / 100);
+                    children: selectedServices.map((service) {
+                      final originalPrice = service.price;
+                      final discountedPrice = _applyDiscount(service.price);
+                      final hasDiscount = discountedPrice < originalPrice;
 
                       return Card(
                         margin: const EdgeInsets.symmetric(vertical: 4),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         child: ListTile(
+                          leading: service.imageUrl != null && service.imageUrl!.isNotEmpty
+                              ? Image.network(service.imageUrl!, width: 50, height: 50, fit: BoxFit.cover)
+                              : const Icon(Icons.miscellaneous_services, size: 40),
                           title: Text(service.name),
                           subtitle: Text('القسم: ${service.departmentId} | ${service.duration} دقيقة'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    '${service.price.toStringAsFixed(1)} ل.س',
-                                    style: const TextStyle(
-                                      decoration: TextDecoration.lineThrough,
-                                      color: Colors.redAccent,
-                                      fontSize: 12,
-                                    ),
+                              if (hasDiscount)
+                                Text(
+                                  '${originalPrice.toStringAsFixed(1)} ل.س',
+                                  style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 12,
+                                    decoration: TextDecoration.lineThrough,
                                   ),
-                                  Text(
-                                    '${discountedPrice.toStringAsFixed(1)} ل.س',
-                                    style: const TextStyle(
-                                      color: Colors.green,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
+                                ),
+                              if (hasDiscount) const SizedBox(width: 6),
+                              Text(
+                                '${discountedPrice.toStringAsFixed(1)} ل.س',
+                                style: TextStyle(
+                                  color: hasDiscount ? Colors.green : Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
                               ),
                               const SizedBox(width: 12),
                               IconButton(
                                 icon: const Icon(Icons.close, color: Colors.redAccent),
                                 onPressed: () {
                                   setState(() {
-                                    selectedServiceIds.remove(id);
+                                    selectedServices.remove(service);
                                   });
                                 },
                               ),
@@ -343,3 +305,4 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage>
     );
   }
 }
+

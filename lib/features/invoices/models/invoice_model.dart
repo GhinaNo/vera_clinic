@@ -1,74 +1,68 @@
-import 'package:uuid/uuid.dart';
 import 'package:vera_clinic/features/invoices/models/payment_model.dart';
-import 'InvoiceItem.dart';
+
+import '../../booking/booking_model.dart';
 
 class Invoice {
-  final String id;
-  final String customerName;
-  final List<InvoiceItem> items;
+  final int id;
+  final int userId;
+  final int bookingId;
+  final String status;
+  final String invoiceDate;
   final double totalAmount;
+  final double paidAmount;
+  final double remainingAmount;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final Booking booking; // <--- هنا نستخدم الموديل الحالي عندك
   final List<Payment> payments;
-  final DateTime date;
-  final String createdBy;
-  final bool isArchived;
 
   Invoice({
-     required this.id,
-    required this.customerName,
-    required this.items,
+    required this.id,
+    required this.userId,
+    required this.bookingId,
+    required this.status,
+    required this.invoiceDate,
     required this.totalAmount,
+    required this.paidAmount,
+    required this.remainingAmount,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.booking,
     required this.payments,
-    required this.date,
-    required this.createdBy,
-    this.isArchived = false,
-  }) ;
-      // : id = const Uuid().v4();
+  });
 
-  double get paidAmount => payments.fold(0, (sum, payment) => sum + payment.amount);
-  double get remainingAmount => totalAmount - paidAmount;
-
-  Invoice copyWith({
-    String? customerName,
-    List<InvoiceItem>? items,
-    double? totalAmount,
-    List<Payment>? payments,
-    DateTime? date,
-    String? createdBy,
-    bool? isArchived,
-  }) {
+  factory Invoice.fromJson(Map<String, dynamic> json) {
     return Invoice(
-      id: id?? this.id,
-      customerName: customerName ?? this.customerName,
-      items: items ?? this.items,
-      totalAmount: totalAmount ?? this.totalAmount,
-      payments: payments ?? this.payments,
-      date: date ?? this.date,
-      createdBy: createdBy ?? this.createdBy,
-      isArchived: isArchived ?? this.isArchived,
+      id: json['id'],
+      userId: json['user_id'],
+      bookingId: json['booking_id'],
+      status: json['status'] ?? 'unpaid',
+      invoiceDate: json['invoice_date'],
+      totalAmount: double.parse(json['total_amount'].toString()),
+      paidAmount: double.parse(json['paid_amount'].toString()),
+      remainingAmount: double.parse(json['remaining_amount'].toString()),
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      booking: Booking.fromJson(json['booking']), // <--- هنا نستخدم موديلك الحالي
+      payments: (json['payments'] as List<dynamic>?)
+          ?.map((p) => Payment.fromJson(p))
+          .toList() ??
+          [],
     );
   }
 
   Map<String, dynamic> toJson() => {
     'id': id,
-    'customerName': customerName,
-    'items': items.map((e) => e.toJson()).toList(),
-    'totalAmount': totalAmount,
-    'payments': payments.map((e) => e.toJson()).toList(),
-    'date': date.toIso8601String(),
-    'createdBy': createdBy,
-    'isArchived': isArchived,
+    'user_id': userId,
+    'booking_id': bookingId,
+    'status': status,
+    'invoice_date': invoiceDate,
+    'total_amount': totalAmount,
+    'paid_amount': paidAmount,
+    'remaining_amount': remainingAmount,
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
+    'booking': booking.toJson(),
+    'payments': payments.map((p) => p.toJson()).toList(),
   };
-
-  factory Invoice.fromJson(Map<String, dynamic> json) => Invoice(
-    id: json['id'],
-    customerName: json['customerName'],
-    items: (json['items'] as List).map((e) => InvoiceItem.fromJson(e)).toList(),
-    totalAmount: json['totalAmount'],
-    payments: (json['payments'] as List).map((e) => Payment.fromJson(e)).toList(),
-    date: DateTime.parse(json['date']),
-    createdBy: json['createdBy'],
-    isArchived: json['isArchived'] ?? false,
-  );
-
-
 }

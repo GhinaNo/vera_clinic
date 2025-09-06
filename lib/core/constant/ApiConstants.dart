@@ -43,7 +43,7 @@ class ApiConstants {
   static String showOfferUrl(int id) => '$baseUrl/web/offer/$id';
   static String addOfferUrl() => '$baseUrl/web/add-offer';
   static String updateOfferUrl(int id) => '$baseUrl/web/update-offer/$id';
-  static String deleteOfferUrl(int id) => '$baseUrl/delete-offer/$id';
+  static String deleteOfferUrl(int id) => '$baseUrl/web/delete-offer/$id';
 
   // Invoices
   static String showInvoicesUrl() => '$baseUrl/web/invoices';
@@ -59,4 +59,22 @@ class ApiConstants {
   static String addPaymentUrl(int invoiceId) => '$baseUrl/web/invoice/$invoiceId/payment';
   static String showPaymentsUrl() => '$baseUrl/web/payments';
   static String showPaymentUrl(int id) => '$baseUrl/web/payment/$id';
+
+  //statistic
+static String fetchClientCountUrl () => '$baseUrl/web/num-clients';
+static String fetchPopularServicesUrl() => '$baseUrl/web/popular-services';
+
+  // Bookings
+  static String addBookingUrl() => '$baseUrl/web/store-booking';
+  static String approveBookingUrl(int id) => '$baseUrl/web/booking-approve/$id';
+  static String rejectBookingUrl(int id) => '$baseUrl/web/booking-reject/$id';
+  static String cancelBookingUrl(int id) => '$baseUrl/web/canceled-booking/$id';
+  static String archiveBookingUrl(int id) => '$baseUrl/web/archive-booking/$id';
+  static String unarchiveBookingUrl(int id) => '$baseUrl/web/un-archive/$id';
+  static String updateBookingUrl(int id) => '$baseUrl/web/update-booking/$id';
+  static String availableBookingUrl() => '$baseUrl/web/available';
+  static String getBookingsUrl() => '$baseUrl/web/get-bookings';
+  static String getBookingUrl(int id) => '$baseUrl/web/get-booking/$id';
+  static String getDailyBookingUrl(String date) => '$baseUrl/web/daily/$date';
+
 }

@@ -67,7 +67,6 @@ class _DepartmentsViewState extends State<DepartmentsView> {
         title: 'إضافة قسم جديد',
         onSave: (department) {
           addCubit.addDepartment(department);
-          Navigator.pop(dialogContext);
         },
       ),
     );
@@ -84,7 +83,6 @@ class _DepartmentsViewState extends State<DepartmentsView> {
           initialDepartment: department,
           onSave: (updatedDept) {
             updateCubit.updateDepartment(department.id!, updatedDept);
-            Navigator.pop(dialogContext);
           },
         ),
       );
@@ -93,11 +91,31 @@ class _DepartmentsViewState extends State<DepartmentsView> {
     }
   }
 
-  void _deleteDepartment(Department department) {
+  void _deleteDepartment(Department department) async {
     final deleteCubit = context.read<DeleteDepartmentCubit>();
 
     if (department.id != null) {
-      deleteCubit.deleteDepartment(department.id!);
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text("تأكيد الحذف"),
+          content: Text("هل أنت متأكد من حذف القسم '${department.name}'؟"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text("إلغاء"),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
+              child: const Text("حذف",style: TextStyle(color: AppColors.offWhite),),
+            ),
+          ],
+        ),
+      );
+      if (confirm == true) {
+        deleteCubit.deleteDepartment(department.id!);
+      }
     } else {
       showCustomToast(context, 'لا يمكن حذف القسم: معرف القسم غير موجود', success: false);
     }
@@ -154,9 +172,10 @@ class _DepartmentsViewState extends State<DepartmentsView> {
                   children: [
                     Align(
                       alignment: Alignment.centerRight,
-                      child: ElevatedButton(onPressed: () => _showAddDialog(),
-                          child: Text('قسم جديد', style: TextStyle(color: Colors.white),),
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
+                      child: ElevatedButton(
+                        onPressed: _showAddDialog,
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
+                        child: const Text('قسم جديد', style: TextStyle(color: Colors.white)),
                       ),
                     ),
                     const SizedBox(height: 20),

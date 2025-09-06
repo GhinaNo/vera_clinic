@@ -14,6 +14,9 @@ class ServicesCubit extends Cubit<ServicesState> {
     emit(ServicesLoading());
     try {
       final services = await repository.fetchServices();
+
+      services.sort((a, b) => b.id.compareTo(a.id));
+
       print("تم تحميل الخدمات بنجاح، عدد الخدمات: ${services.length}");
       emit(ServicesLoaded(services));
     } catch (e) {
@@ -28,7 +31,10 @@ class ServicesCubit extends Cubit<ServicesState> {
     try {
       await repository.addService(data, image: image, imageBytes: imageBytes);
       print("تمت إضافة الخدمة بنجاح، الآن جلب الخدمات المحدثة");
+
       final services = await repository.fetchServices();
+      services.sort((a, b) => b.id.compareTo(a.id));
+
       emit(ServiceActionSuccess("تمت إضافة الخدمة بنجاح"));
       emit(ServicesLoaded(services));
     } catch (e) {
@@ -43,7 +49,10 @@ class ServicesCubit extends Cubit<ServicesState> {
     try {
       await repository.updateService(id, data, image: image, imageBytes: imageBytes);
       print("تم تعديل الخدمة بنجاح، الآن جلب الخدمات المحدثة");
+
       final services = await repository.fetchServices();
+      services.sort((a, b) => b.id.compareTo(a.id));
+
       emit(ServiceActionSuccess("تم تعديل الخدمة بنجاح"));
       emit(ServicesLoaded(services));
     } catch (e) {
@@ -58,7 +67,10 @@ class ServicesCubit extends Cubit<ServicesState> {
     try {
       await repository.deleteService(id);
       print("تم حذف الخدمة بنجاح، الآن جلب الخدمات المحدثة");
+
       final services = await repository.fetchServices();
+      services.sort((a, b) => b.id.compareTo(a.id));
+
       emit(ServiceActionSuccess("تم حذف الخدمة بنجاح"));
       emit(ServicesLoaded(services));
     } catch (e) {
@@ -72,6 +84,9 @@ class ServicesCubit extends Cubit<ServicesState> {
     emit(ServicesLoading());
     try {
       final results = await repository.searchServices(query);
+
+      results.sort((a, b) => b.id.compareTo(a.id));
+
       print("تم الحصول على نتائج البحث، عدد النتائج: ${results.length}");
       emit(ServicesLoaded(results));
     } catch (e) {

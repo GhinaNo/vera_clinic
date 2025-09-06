@@ -1,63 +1,64 @@
+// SelectServicesPage.dart
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../services/models/service.dart';
 
 class SelectServicesPage extends StatefulWidget {
   final List<Service> allServices;
-  final List<String> initiallySelectedIds;
+  final List<Service> initiallySelectedServices;
 
   const SelectServicesPage({
     super.key,
     required this.allServices,
-    required this.initiallySelectedIds,
+    required this.initiallySelectedServices,
   });
 
   @override
   State<SelectServicesPage> createState() => _SelectServicesPageState();
 }
 
-class _SelectServicesPageState extends State<SelectServicesPage>
-    with SingleTickerProviderStateMixin {
-  late List<Service> uniqueServices;
-  late Set<String> selectedIds;
+class _SelectServicesPageState extends State<SelectServicesPage> {
+  late List<Service> displayedServices;
+  late Set<int> selectedServiceIds;
   int? selectedDepartmentId;
-  String search = '';
-
-  late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    uniqueServices = widget.allServices;
-    selectedIds = widget.initiallySelectedIds.toSet();
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+    displayedServices = widget.allServices;
+    selectedServiceIds = widget.initiallySelectedServices.map((s) => s.id).toSet();
   }
 
   List<Service> get filteredServices {
-    return uniqueServices.where((service) {
-      final matchesDepartment =
-          selectedDepartmentId == null || service.departmentId == selectedDepartmentId;
-      final matchesSearch = search.isEmpty ||
-          service.name.toLowerCase().contains(search.toLowerCase());
-      return matchesDepartment && matchesSearch;
-    }).toList();
+    return displayedServices
+        .where((service) =>
+    selectedDepartmentId == null || service.departmentId == selectedDepartmentId)
+        .toList();
+  }
+
+  Widget _buildDepartmentButton(int? deptId, String label) {
+    final isSelected = selectedDepartmentId == deptId;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ElevatedButton(
+        onPressed: () {
+          setState(() {
+            selectedDepartmentId = deptId;
+          });
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSelected ? AppColors.purple : Colors.grey[200],
+          foregroundColor: isSelected ? Colors.white : Colors.black87,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        ),
+        child: Text(label),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final departments = uniqueServices.map((s) => s.departmentId).toSet().toList();
+    final departments = displayedServices.map((s) => s.departmentId).toSet().toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -67,111 +68,69 @@ class _SelectServicesPageState extends State<SelectServicesPage>
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: TextField(
-              decoration: const InputDecoration(
-                labelText: 'بحث',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.search),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  search = value.trim();
-                  _controller.reset();
-                  _controller.forward();
-                });
-              },
-            ),
-          ),
+          const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             height: 40,
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
-                ChoiceChip(
-                  label: const Text('كل الأقسام'),
-                  selected: selectedDepartmentId == null,
-                  onSelected: (_) {
-                    setState(() {
-                      selectedDepartmentId = null;
-                      _controller.reset();
-                      _controller.forward();
-                    });
-                  },
-                ),
-                const SizedBox(width: 8),
-                ...departments.map((departmentId) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text('قسم $departmentId'),
-                      selected: selectedDepartmentId == departmentId,
-                      onSelected: (_) {
-                        setState(() {
-                          selectedDepartmentId = departmentId;
-                          _controller.reset();
-                          _controller.forward();
-                        });
-                      },
-                    ),
-                  );
-                }).toList(),
+                _buildDepartmentButton(null, 'كل الأقسام'),
+                ...departments.map((deptId) => _buildDepartmentButton(deptId, 'قسم $deptId'))
               ],
             ),
           ),
           const SizedBox(height: 8),
           Expanded(
             child: filteredServices.isEmpty
-                ? const Center(child: Text('لا توجد خدمات مطابقة'))
+                ? const Center(child: Text('لا توجد خدمات متاحة'))
                 : ListView.builder(
               itemCount: filteredServices.length,
               itemBuilder: (context, index) {
                 final service = filteredServices[index];
-                final serviceIdStr = service.id.toString();
-                final isSelected = selectedIds.contains(serviceIdStr);
+                final isSelected = selectedServiceIds.contains(service.id);
+                final discountedPrice = service.discountedPrice ?? service.price;
+                final hasDiscount = discountedPrice < service.price;
 
-                final start = index * 0.1;
-                final end = start + 0.5;
-                final animation = CurvedAnimation(
-                  parent: _controller,
-                  curve: Interval(
-                    start < 1.0 ? start : 1.0,
-                    end < 1.0 ? end : 1.0,
-                    curve: Curves.easeOut,
-                  ),
-                );
-
-                return FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.1),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: CheckboxListTile(
-                        title: Text(service.name),
-                        subtitle: Text(
-                            'القسم: ${service.departmentId} | ${service.duration} دقيقة'),
-                        secondary: Text('${service.price.toStringAsFixed(1)} ل.س'),
-                        value: isSelected,
-                        onChanged: (value) {
-                          setState(() {
-                            if (value == true) {
-                              selectedIds.add(serviceIdStr);
-                            } else {
-                              selectedIds.remove(serviceIdStr);
-                            }
-                          });
-                        },
-                      ),
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: CheckboxListTile(
+                    title: Text(service.name),
+                    subtitle: Text('القسم: ${service.departmentId} | ${service.duration} دقيقة'),
+                    secondary: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (hasDiscount)
+                          Text(
+                            '${service.price.toStringAsFixed(1)} ل.س',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                        if (hasDiscount) const SizedBox(width: 6),
+                        Text(
+                          '${discountedPrice.toStringAsFixed(1)} ل.س',
+                          style: TextStyle(
+                            color: hasDiscount ? Colors.green : Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
+                    value: isSelected,
+                    onChanged: (value) {
+                      setState(() {
+                        if (value == true) {
+                          selectedServiceIds.add(service.id);
+                        } else {
+                          selectedServiceIds.remove(service.id);
+                        }
+                      });
+                    },
                   ),
                 );
               },
@@ -183,13 +142,16 @@ class _SelectServicesPageState extends State<SelectServicesPage>
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
               onPressed: () {
-                if (selectedIds.isEmpty) {
+                if (selectedServiceIds.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('يرجى اختيار خدمة واحدة على الأقل')),
                   );
                   return;
                 }
-                Navigator.pop(context, selectedIds.toList());
+                final selectedServices = displayedServices
+                    .where((s) => selectedServiceIds.contains(s.id))
+                    .toList();
+                Navigator.pop(context, selectedServices);
               },
               child: const Text('تأكيد الاختيار', style: TextStyle(color: Colors.white)),
             ),

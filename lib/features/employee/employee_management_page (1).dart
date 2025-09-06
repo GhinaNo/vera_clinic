@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -5,14 +6,11 @@ import 'package:intl/intl.dart';
 import 'package:vera_clinic/core/services/token_storage.dart';
 import 'package:vera_clinic/core/theme/app_theme.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:vera_clinic/core/widgets/custom_toast.dart';
-import 'package:vera_clinic/features/employee/employee_cubit.dart';
+import 'employee_cubit.dart';
 import 'employee_state.dart';
-import 'package:vera_clinic/features/employee/employee_model.dart';
-
-// ----------------- EmployeePage -------------------
+import 'employee_model.dart';
+import 'package:http/http.dart' as http;
 
 class EmployeePage extends StatefulWidget {
   const EmployeePage({super.key});
@@ -132,7 +130,8 @@ class _EmployeePageState extends State<EmployeePage> {
                     }
 
                     employees = employees.where((e) {
-                      return isArchiveMode ? e.archivedAt != null : e.archivedAt == null;
+                      if (isArchiveMode) return e.archivedAt != null;
+                      return e.archivedAt == null;
                     }).toList();
 
                     if (searchQuery.isNotEmpty) {
@@ -179,10 +178,16 @@ class _EmployeePageState extends State<EmployeePage> {
                                               Text(emp.user.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                                               Text('الدور: ${emp.user.role ?? emp.role ?? ""}'),
                                               Text('البريد: ${emp.user.email}'),
-                                              Text(emp.archivedAt != null
-                                                  ? '🗄️ الحالة: مؤرشف'
-                                                  : '✅ الحالة: نشط',
-                                                  style: TextStyle(color: emp.archivedAt != null ? Colors.red : Colors.green)),
+                                              Text(
+                                                emp.archivedAt != null
+                                                    ? '🗄️ الحالة: مؤرشف'
+                                                    : (emp.user.status == 'blocked' ? '⛔ الحالة: محظور' : '✅ الحالة: نشط'),
+                                                style: TextStyle(
+                                                  color: emp.archivedAt != null
+                                                      ? Colors.red
+                                                      : (emp.user.status == 'blocked' ? Colors.orange : Colors.green),
+                                                ),
+                                              ),
                                               if (emp.createdAt != null) Text('📅 انضم: ${emp.createdAt!.substring(0, 10)}'),
                                               if (emp.updatedAt != null) Text('✏️ آخر تحديث: ${emp.updatedAt!.substring(0, 10)}'),
                                             ],
@@ -193,10 +198,12 @@ class _EmployeePageState extends State<EmployeePage> {
                                             if (!isArchiveMode)
                                               IconButton(
                                                 icon: const Icon(Icons.edit),
+                                                tooltip: 'تعديل الموظف',
                                                 onPressed: () => _showAddEmployeeDialog(emp),
                                               ),
                                             IconButton(
                                               icon: Icon(isArchiveMode ? Icons.unarchive : Icons.archive),
+                                              tooltip: isArchiveMode ? 'استرجاع الموظف' : 'أرشفة الموظف',
                                               onPressed: () async {
                                                 final confirm = await showDialog<bool>(
                                                   context: context,
@@ -220,14 +227,50 @@ class _EmployeePageState extends State<EmployeePage> {
                                                 );
 
                                                 if (isArchiveMode) {
-                                                  showCustomToast(context, 'تم استرجاع الموظف بنجاح', success: true);
-                                                  await cubit.fetchArchivedEmployees();
+                                                  cubit.fetchArchivedEmployees();
                                                 } else {
-                                                  showCustomToast(context, 'تم أرشفة الموظف بنجاح', success: true);
-                                                  await cubit.fetchEmployees();
+                                                  cubit.fetchEmployees();
                                                 }
+
+                                                showCustomToast(
+                                                  context,
+                                                  isArchiveMode ? 'تم استرجاع الموظف بنجاح' : 'تم أرشفة الموظف بنجاح',
+                                                  success: true,
+                                                );
                                               },
                                             ),
+                                            if (emp.user.role != 'admin')
+                                              IconButton(
+                                                icon: Icon(emp.user.status == 'blocked' ? Icons.check_circle : Icons.block),
+                                                tooltip: emp.user.status == 'blocked' ? 'تفعيل الموظف' : 'حظر الموظف',
+                                                onPressed: () async {
+                                                  final confirm = await showDialog<bool>(
+                                                    context: context,
+                                                    builder: (_) => AlertDialog(
+                                                      title: Text(emp.user.status == 'blocked' ? 'تفعيل موظف؟' : 'حظر موظف؟'),
+                                                      content: Text(emp.user.status == 'blocked'
+                                                          ? 'هل أنت متأكد من تفعيل الموظف؟'
+                                                          : 'هل أنت متأكد من حظر الموظف؟'),
+                                                      actions: [
+                                                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+                                                        ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('تأكيد')),
+                                                      ],
+                                                    ),
+                                                  );
+
+                                                  if (confirm != true) return;
+
+                                                  final cubit = context.read<EmployeeCubit>();
+                                                  await cubit.toggleStatusEmployee(employeeId: emp.id);
+
+                                                  showCustomToast(
+                                                    context,
+                                                    emp.user.status == 'blocked' ? 'تم تفعيل الموظف بنجاح' : 'تم حظر الموظف بنجاح',
+                                                    success: true,
+                                                  );
+                                                },
+                                              ),
+
                                           ],
                                         ),
                                       ],
@@ -395,7 +438,6 @@ class _AddEmployeeDialogState extends State<AddEmployeeDialog> {
                     DropdownMenuItem(value: 'admin', child: Text('مدير')),
                     DropdownMenuItem(value: 'doctor', child: Text('طبيب')),
                     DropdownMenuItem(value: 'receptionist', child: Text('موظف استقبال')),
-                    DropdownMenuItem(value: 'nurse', child: Text('ممرض')),
                   ],
                   onChanged: (v) => setState(() => role = v ?? ''),
                   validator: (val) => val == null || val.isEmpty ? 'اختر الدور الوظيفي' : null,

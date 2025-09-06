@@ -4,8 +4,9 @@ class Client {
   final String email;
   final bool isActive;
   final String? role;
-  final String? createdAt;  // جديد
-  final String? updatedAt;  // جديد
+  final String? createdAt;
+  final String? updatedAt;
+  final List<dynamic>? bookings;
 
   Client({
     required this.id,
@@ -15,6 +16,7 @@ class Client {
     this.role,
     this.createdAt,
     this.updatedAt,
+    this.bookings,
   });
 
   factory Client.fromJson(Map<String, dynamic> json) => Client(
@@ -23,8 +25,9 @@ class Client {
     email: json['email'],
     isActive: json['is_active'] == 1,
     role: json['role'],
-    createdAt: json['created_at'],   // جديد
-    updatedAt: json['updated_at'],   // جديد
+    createdAt: json['created_at'],
+    updatedAt: json['updated_at'],
+    bookings: json['bookings'] ?? [],
   );
 
   Client copyWith({
@@ -35,6 +38,7 @@ class Client {
     String? role,
     String? createdAt,
     String? updatedAt,
+    List<dynamic>? bookings,
   }) =>
       Client(
         id: id ?? this.id,
@@ -44,5 +48,6 @@ class Client {
         role: role ?? this.role,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
+        bookings: bookings ?? this.bookings,
       );
 }

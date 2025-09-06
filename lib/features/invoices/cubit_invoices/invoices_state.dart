@@ -1,37 +1,49 @@
-// import '../models/invoice_model.dart';
-//
-// abstract class InvoicesState {}
-//
-// // Initial state
-// class InvoicesInitial extends InvoicesState {}
-//
-// // Loading state
-// class InvoicesLoading extends InvoicesState {}
-//
-// // Loaded invoices state
-// class InvoicesLoaded extends InvoicesState {
-//   final List<Invoice> invoices;
-//
-//   InvoicesLoaded(this.invoices);
-// }
-//
-// // Loaded single invoice
-// class InvoiceLoaded extends InvoicesState {
-//   final Invoice invoice;
-//
-//   InvoiceLoaded(this.invoice);
-// }
-//
-// // Error state
-// class InvoicesError extends InvoicesState {
-//   final String message;
-//
-//   InvoicesError(this.message);
-// }
-//
-// //  state for actions like archive/restore success
-// class InvoiceActionSuccess extends InvoicesState {
-//   final String message;
-//
-//   InvoiceActionSuccess(this.message);
-// }
+import 'package:equatable/equatable.dart';
+import '../models/invoice_model.dart';
+
+abstract class InvoiceState extends Equatable {
+  const InvoiceState();
+
+  @override
+  List<Object?> get props => [];
+}
+
+class InvoiceInitial extends InvoiceState {}
+
+class InvoiceLoading extends InvoiceState {}
+
+class InvoicesLoaded extends InvoiceState {
+  final List<Invoice> invoices;
+
+  const InvoicesLoaded(this.invoices);
+
+  @override
+  List<Object?> get props => [invoices];
+}
+
+class InvoiceLoaded extends InvoiceState {
+  final Invoice invoice;
+
+  const InvoiceLoaded(this.invoice);
+
+  @override
+  List<Object?> get props => [invoice];
+}
+
+class InvoiceError extends InvoiceState {
+  final String message;
+
+  const InvoiceError(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+class ReportLoaded extends InvoiceState {
+  final Map<String, dynamic> report;
+
+  const ReportLoaded(this.report);
+
+  @override
+  List<Object?> get props => [report];
+}

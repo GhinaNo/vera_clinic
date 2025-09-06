@@ -57,7 +57,7 @@ class OfferCard extends StatelessWidget {
                     fontSize: 14,
                   ),
                 ),
-                if (offer.serviceIds.isNotEmpty) const SizedBox(height: 6),
+                if (offer.services.isNotEmpty) const SizedBox(height: 6),
               ],
             ),
           ),

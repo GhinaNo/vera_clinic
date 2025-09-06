@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:vera_clinic/features/employee/employee_cubit.dart';
 import '../../core/services/token_storage.dart';
 import '../../core/theme/app_theme.dart';
 import '../auth/cubit/log_out/logout_cubit.dart';
@@ -12,21 +11,23 @@ import '../clients/pages/clients_page.dart';
 import '../departments/cubit/show_departments/show_departments_cubit.dart';
 import '../departments/models/departments_repository.dart';
 import '../departments/pages/departments_pages.dart';
+import '../employee/employee_cubit.dart';
 import '../employee/employee_management_page (1).dart';
-import '../invoices/cubit_invoices/invoices_cubit.dart';
+import '../offers/cubit/offer_cubit.dart';
 import '../offers/model/offers_repository.dart';
+import '../offers/pages/offers_page.dart';
 import '../services/cubit/ServicesCubit.dart';
 import '../services/models/ServicesRepository.dart';
 import '../services/pages/service_page.dart';
-import '../offers/cubit/offer_cubit.dart';
-import '../offers/pages/offers_page.dart';
-import '../invoices/pages/invoices_list_page.dart';
+import '../statistics/cubit/statistics_cubit.dart';
+import '../statistics/page/statistics_page.dart';
+import '../statistics/repository/statistics_repository.dart';
 
 class DashboardPage extends StatefulWidget {
   final String role;
   final String token;
 
-  DashboardPage({super.key, required this.role, required this.token,});
+  const DashboardPage({super.key, required this.role, required this.token});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -41,14 +42,19 @@ class _DashboardPageState extends State<DashboardPage> {
   late List<Widget> allowedContent;
 
   late ShowDepartmentsCubit _departmentsCubit;
+  late ServicesCubit _servicesCubit;
+  late OffersCubit _offersCubit;
+  late StatisticsCubit _statisticsCubit;
+  late EmployeeCubit _employeeCubit;
+  late ClientCubit _clientCubit;
 
   @override
   void initState() {
     super.initState();
 
-    // تحديد العناوين والأيقونات حسب الدور
     if (widget.role == 'admin') {
       allowedTitles = [
+        'الاحصاءات',
         'الأقسام',
         'الخدمات',
         'العروض',
@@ -56,12 +62,12 @@ class _DashboardPageState extends State<DashboardPage> {
         'العملاء',
         'المواعيد',
         'الحجوزات',
-        'الإدارة',
         'الموظفون',
         'الإشعارات',
         'تسجيل الخروج',
       ];
       allowedIcons = [
+        Icons.data_usage_sharp,
         Icons.category_outlined,
         Icons.medical_services_outlined,
         Icons.local_offer_outlined,
@@ -69,13 +75,14 @@ class _DashboardPageState extends State<DashboardPage> {
         Icons.person_outline,
         Icons.calendar_month_outlined,
         Icons.book_online_outlined,
-        Icons.manage_accounts_outlined,
         Icons.people_alt_outlined,
         Icons.notifications_outlined,
         Icons.logout,
       ];
     } else {
       allowedTitles = [
+        'الأقسام',
+        'الخدمات',
         'المحاسبة',
         'العملاء',
         'المواعيد',
@@ -84,6 +91,8 @@ class _DashboardPageState extends State<DashboardPage> {
         'تسجيل الخروج',
       ];
       allowedIcons = [
+        Icons.category_outlined,
+        Icons.medical_services_outlined,
         Icons.account_balance_wallet_outlined,
         Icons.person_outline,
         Icons.calendar_month_outlined,
@@ -97,56 +106,62 @@ class _DashboardPageState extends State<DashboardPage> {
       repository: DepartmentsRepository(token: widget.token),
     )..fetchDepartments();
 
-    // تحديد محتوى كل صفحة
+    _servicesCubit = ServicesCubit(
+      repository: ServicesRepository(token: widget.token),
+    )..fetchServices();
+
+    _offersCubit = OffersCubit(
+      repository: OffersRepository(token: widget.token),
+    );
+
+    _statisticsCubit = StatisticsCubit(StatisticsRepository());
+
+    _employeeCubit = EmployeeCubit()..fetchEmployees(
+      extraHeaders: {'Authorization': 'Bearer ${widget.token}'},
+    );
+
+    _clientCubit = ClientCubit(
+      repository: ClientRepository(token: widget.token),
+    )..fetchClients();
+
     allowedContent = allowedTitles.map((t) {
       switch (t) {
+        case 'الاحصاءات':
+          return BlocProvider.value(
+            value: _statisticsCubit,
+            child: StatisticsPage(statisticsCubit: _statisticsCubit),
+          );
         case 'الأقسام':
-          return DepartmentsPage(token: widget.token);
+          return BlocProvider.value(
+            value: _departmentsCubit,
+            child: DepartmentsPage(token: widget.token),
+          );
         case 'الخدمات':
-          return BlocProvider(
-            create: (_) => ServicesCubit(
-              repository: ServicesRepository(token: widget.token),
-            ),
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: _servicesCubit),
+              BlocProvider.value(value: _departmentsCubit),
+            ],
             child: const ServicesPage(),
           );
         case 'العروض':
           return MultiBlocProvider(
             providers: [
-              BlocProvider(
-                create: (_) => ServicesCubit(
-                  repository: ServicesRepository(token: widget.token),
-                )..fetchServices(),
-              ),
-              BlocProvider(
-                create: (_) => OffersCubit(
-                  repository: OffersRepository(token: widget.token),
-                ),
-              ),
+              BlocProvider.value(value: _servicesCubit),
+              BlocProvider.value(value: _offersCubit),
             ],
             child: const OffersPage(),
           );
         case 'الموظفون':
-          return BlocProvider(
-            create: (_) => EmployeeCubit()..fetchEmployees(
-              extraHeaders: {'Authorization': 'Bearer ${widget.token}'},
-            ),
+          return BlocProvider.value(
+            value: _employeeCubit,
             child: const EmployeePage(),
           );
         case 'العملاء':
-          return BlocProvider(
-            create: (_) => ClientCubit(
-              repository: ClientRepository(token: widget.token),
-            )..fetchClients(),
-            child: Builder(
-              builder: (context) {
-                final clientCubit = context.read<ClientCubit>();
-                return ClientPage(cubit: clientCubit);
-              },
-            ),
+          return BlocProvider.value(
+            value: _clientCubit,
+            child: ClientPage(cubit: _clientCubit),
           );
-
-        case 'المحاسبة':
-          return const InvoicesListPage();
         case 'تسجيل الخروج':
           return _buildLogoutPage();
         default:
@@ -158,72 +173,48 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void dispose() {
     _departmentsCubit.close();
+    _servicesCubit.close();
+    _offersCubit.close();
+    _statisticsCubit.close();
+    _employeeCubit.close();
+    _clientCubit.close();
     super.dispose();
   }
 
-  Widget _buildLogoutPage() {
-    return const Center(child: Text("جارٍ تسجيل الخروج..."));
-  }
+  Widget _buildLogoutPage() => const Center(child: Text("جارٍ تسجيل الخروج..."));
 
   Future<void> _confirmLogout(BuildContext context) async {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: Colors.white,
         title: Row(
           children: [
             Icon(Icons.logout, color: AppColors.purple),
             const SizedBox(width: 8),
-            const Text(
-              "تسجيل الخروج",
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
+            const Text("تسجيل الخروج",
+                style: TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 20)),
           ],
         ),
         content: const Text(
           "هل أنت متأكد أنك تريد تسجيل الخروج؟",
-          style: TextStyle(
-            fontFamily: 'Tajawal',
-            fontSize: 16,
-          ),
+          style: TextStyle(fontFamily: 'Tajawal', fontSize: 16),
         ),
         actionsAlignment: MainAxisAlignment.spaceBetween,
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text(
-              "إلغاء",
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                color: Colors.grey,
-                fontSize: 16,
-              ),
-            ),
-          ),
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text("إلغاء",
+                  style: TextStyle(fontFamily: 'Tajawal', color: Colors.grey, fontSize: 16))),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.purple,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            ),
-            child: const Text(
-              "تسجيل الخروج",
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 16,
-                color: Colors.white,
-              ),
-            ),
+                backgroundColor: AppColors.purple,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10)),
+            child: const Text("تسجيل الخروج",
+                style: TextStyle(fontFamily: 'Tajawal', fontSize: 16, color: Colors.white)),
           ),
         ],
       ),
@@ -239,16 +230,20 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery
+        .of(context)
+        .size
+        .width;
     final bool isSmallScreen = screenWidth < 700;
 
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _departmentsCubit),
-        BlocProvider(create: (_) => OffersCubit(
-          repository: OffersRepository(token: widget.token),
-        )),
-        BlocProvider(create: (_) => InvoicesCubit()),
+        BlocProvider.value(value: _servicesCubit),
+        BlocProvider.value(value: _offersCubit),
+        BlocProvider.value(value: _statisticsCubit),
+        BlocProvider.value(value: _employeeCubit),
+        BlocProvider.value(value: _clientCubit),
         BlocProvider(create: (_) => LogoutCubit(AuthRepository())),
       ],
       child: Scaffold(
@@ -257,9 +252,11 @@ class _DashboardPageState extends State<DashboardPage> {
         body: isSmallScreen ? _buildSmallScreenBody() : _buildLargeScreenBody(),
       ),
     );
-  }
 
-  Widget _buildDrawer() {
+ }
+
+
+Widget _buildDrawer() {
     return Drawer(
       child: Container(
         decoration: BoxDecoration(
@@ -313,39 +310,32 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildSmallScreenBody() {
-    return Column(
-      children: [
-        AppBar(
-          backgroundColor: AppColors.purple,
-          title: Row(
-            children: [
-              Icon(allowedIcons[selectedIndex], color: Colors.white),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  allowedTitles[selectedIndex],
+  Widget _buildSmallScreenBody() => Column(
+    children: [
+      AppBar(
+        backgroundColor: AppColors.purple,
+        title: Row(
+          children: [
+            Icon(allowedIcons[selectedIndex], color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(allowedTitles[selectedIndex],
                   style: const TextStyle(
-                    fontFamily: 'Tajawal',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(context).openDrawer(),
+                      fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 20),
+                  overflow: TextOverflow.ellipsis),
             ),
+          ],
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        Expanded(child: _buildContent()),
-      ],
-    );
-  }
+      ),
+      Expanded(child: _buildContent()),
+    ],
+  );
 
   Widget _buildLargeScreenBody() {
     return Row(
@@ -474,10 +464,8 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildContent() {
-    return IndexedStack(
-      index: selectedIndex,
-      children: allowedContent,
-    );
-  }
+  Widget _buildContent() => IndexedStack(
+    index: selectedIndex,
+    children: allowedContent,
+  );
 }

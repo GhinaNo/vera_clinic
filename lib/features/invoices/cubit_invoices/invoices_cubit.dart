@@ -1,63 +1,91 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../models/InvoiceRepository.dart';
 import '../models/invoice_model.dart';
-import '../../../core/utils/local_storage_helper.dart';
-import '../storage/storage.dart';
+import 'invoices_state.dart';
 
-class InvoicesCubit extends Cubit<List<Invoice>> {
-  InvoicesCubit() : super([]);
+class InvoiceCubit extends Cubit<InvoiceState> {
+  final InvoiceRepository repository;
 
-  Future<void> loadInitial() async {
-    final loaded = await InvoiceStorage.loadInvoices();
-    emit(loaded);
+  InvoiceCubit(this.repository) : super(InvoiceInitial());
+
+  Future<void> loadInvoices() async {
+    emit(InvoiceLoading());
+    try {
+      final invoices = await repository.getInvoices();
+      emit(InvoicesLoaded(invoices));
+    } catch (e) {
+      emit(InvoiceError(e.toString()));
+    }
   }
 
-  void addInvoice(Invoice invoice) {
-    final updatedList = List<Invoice>.from(state)..add(invoice);
-    _syncArchivedIds(updatedList);
-    emit(updatedList);
-    InvoiceStorage.saveInvoices(updatedList);
-
+  Future<void> loadInvoice(int id) async {
+    emit(InvoiceLoading());
+    try {
+      final invoice = await repository.getInvoice(id);
+      emit(InvoiceLoaded(invoice));
+    } catch (e) {
+      emit(InvoiceError(e.toString()));
+    }
   }
 
-  void updateInvoice(Invoice updatedInvoice) {
-    final updatedList = state.map((invoice) {
-      return invoice.id == updatedInvoice.id ? updatedInvoice : invoice;
-    }).toList();
-    _syncArchivedIds(updatedList);
-    emit(updatedList);
-    InvoiceStorage.saveInvoices(updatedList);
+  /// تم تعديلها لتستخدم Booking ID
+  Future<void> createInvoice(int bookingId) async {
+    emit(InvoiceLoading());
+    try {
+      final invoice = await repository.createInvoice(bookingId);
+      emit(InvoiceLoaded(invoice));
+    } catch (e) {
+      emit(InvoiceError(e.toString()));
+    }
   }
 
-  void removeInvoice(String id) {
-    final updatedList = state.where((invoice) => invoice.id != id).toList();
-    _syncArchivedIds(updatedList);
-    emit(updatedList);
-    InvoiceStorage.saveInvoices(updatedList);
-
+  Future<void> archiveInvoice(int id) async {
+    emit(InvoiceLoading());
+    try {
+      await repository.archiveInvoice(id);
+      await loadInvoices();
+    } catch (e) {
+      emit(InvoiceError(e.toString()));
+    }
   }
 
-  void archiveInvoice(String id) {
-    final updatedList = state.map((invoice) {
-      return invoice.id == id ? invoice.copyWith(isArchived: true) : invoice;
-    }).toList();
-    _syncArchivedIds(updatedList);
-    emit(updatedList);
-    InvoiceStorage.saveInvoices(updatedList);
+  Future<void> restoreInvoice(int id) async {
+    emit(InvoiceLoading());
+    try {
+      await repository.restoreInvoice(id);
+      await loadInvoices();
+    } catch (e) {
+      emit(InvoiceError(e.toString()));
+    }
   }
 
-  void unarchiveInvoice(String id) {
-    final updatedList = state.map((invoice) {
-      return invoice.id == id ? invoice.copyWith(isArchived: false) : invoice;
-    }).toList();
-    _syncArchivedIds(updatedList);
-    emit(updatedList);
-    InvoiceStorage.saveInvoices(updatedList);
-
+  Future<void> loadArchives() async {
+    emit(InvoiceLoading());
+    try {
+      final archives = await repository.getArchives();
+      emit(InvoicesLoaded(archives));
+    } catch (e) {
+      emit(InvoiceError(e.toString()));
+    }
   }
 
-  void _syncArchivedIds(List<Invoice> invoices) {
-    final archivedIds = invoices.where((i) => i.isArchived).map((i) => i.id).toList();
-    LocalStorageHelper.saveArchivedInvoiceIds(archivedIds);
+  Future<void> loadArchive(int id) async {
+    emit(InvoiceLoading());
+    try {
+      final archive = await repository.getArchive(id);
+      emit(InvoiceLoaded(archive));
+    } catch (e) {
+      emit(InvoiceError(e.toString()));
+    }
+  }
 
+  Future<void> loadReport({required String reportType, required String date}) async {
+    emit(InvoiceLoading());
+    try {
+      final report = await repository.getReport(reportType: reportType, date: date);
+      emit(ReportLoaded(report));
+    } catch (e) {
+      emit(InvoiceError(e.toString()));
+    }
   }
 }
