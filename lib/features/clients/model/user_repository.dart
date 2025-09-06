@@ -7,7 +7,6 @@ class ClientRepository {
   final String token;
   ClientRepository({required this.token});
 
-  // 1- fetch all clients
   Future<List<Client>> fetchClients() async {
     print('fetchClients: بدء جلب العملاء');
     final response = await http.get(
@@ -28,7 +27,6 @@ class ClientRepository {
     }
   }
 
-  // 2- show single client
   Future<Client> showClient(int id) async {
     print('showClient: بدء جلب العميل ID=$id');
     final response = await http.get(
@@ -47,7 +45,6 @@ class ClientRepository {
     }
   }
 
-  // 3- add client
   Future<Client> addClient(Client client) async {
     print('addClient: إضافة عميل ${client.name}');
     final response = await http.post(
@@ -74,7 +71,6 @@ class ClientRepository {
     }
   }
 
-  // 4- toggle status (block/unblock)
   Future<void> toggleStatus(int id) async {
     print('toggleStatus: تبديل حالة العميل ID=$id');
     final response = await http.post(
@@ -91,7 +87,6 @@ class ClientRepository {
     }
   }
 
-  // 5- search clients
   Future<List<Client>> searchClient(String query) async {
     print('searchClient: البحث عن "$query"');
     final response = await http.post(

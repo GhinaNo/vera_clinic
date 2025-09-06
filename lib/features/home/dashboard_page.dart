@@ -48,6 +48,7 @@ class _DashboardPageState extends State<DashboardPage> {
   late EmployeeCubit _employeeCubit;
   late ClientCubit _clientCubit;
 
+
   @override
   void initState() {
     super.initState();
@@ -124,6 +125,8 @@ class _DashboardPageState extends State<DashboardPage> {
       repository: ClientRepository(token: widget.token),
     )..fetchClients();
 
+
+
     allowedContent = allowedTitles.map((t) {
       switch (t) {
         case 'الاحصاءات':
@@ -152,7 +155,8 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
             child: const OffersPage(),
           );
-        case 'الموظفون':
+
+          case 'الموظفون':
           return BlocProvider.value(
             value: _employeeCubit,
             child: const EmployeePage(),
