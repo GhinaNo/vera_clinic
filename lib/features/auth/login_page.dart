@@ -30,7 +30,6 @@ class _LoginFormState extends State<LoginForm> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool isPasswordVisible = false;
-  String selectedRole = 'admin';
   bool isLoading = false;
 
   void _login() {
@@ -41,7 +40,6 @@ class _LoginFormState extends State<LoginForm> {
       context.read<LoginCubit>().login(
         email: email,
         password: password,
-        role: selectedRole,
       );
     }
   }
@@ -91,13 +89,23 @@ class _LoginFormState extends State<LoginForm> {
                         if (state is LoginSuccess) {
                           final loginResponse = state.loginResponse;
                           showCustomToast(context, 'تم تسجيل الدخول بنجاح', success: true);
-                          context.go(
-                            '/home',
-                            extra: {
-                              'role': loginResponse.role,
+
+                          if (loginResponse.role == "admin") {
+                            context.go('/admin-home', extra: {
                               'token': loginResponse.token,
-                            },
-                          );
+                              'role': loginResponse.role,
+                            });
+                          } else if (loginResponse.role == "receptionist") {
+                            context.go('/reception-home', extra: {
+                              'token': loginResponse.token,
+                              'role': loginResponse.role,
+                            });
+                          } else {
+                            context.go('/home', extra: {
+                              'token': loginResponse.token,
+                              'role': loginResponse.role,
+                            });
+                          }
                         } else if (state is LoginFailure) {
                           showCustomToast(context, state.error, success: false);
                         }
@@ -125,8 +133,7 @@ class _LoginFormState extends State<LoginForm> {
                                   ),
                                 ),
                                 child: Column(
-                                  mainAxisAlignment:
-                                  MainAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Image.asset(
                                       'assets/images/logo.png',
@@ -147,8 +154,7 @@ class _LoginFormState extends State<LoginForm> {
                                     Text(
                                       "إدارة مركز فيرا-درعا",
                                       style: TextStyle(
-                                        color: AppColors.offWhite
-                                            .withOpacity(0.9),
+                                        color: AppColors.offWhite.withOpacity(0.9),
                                         fontSize: 18,
                                       ),
                                       textAlign: TextAlign.center,
@@ -205,9 +211,7 @@ class _LoginFormState extends State<LoginForm> {
             ),
           ),
       ],
-
     );
-
   }
 
   Widget _buildForm(BuildContext context) {
@@ -239,8 +243,7 @@ class _LoginFormState extends State<LoginForm> {
               if (value == null || value.isEmpty) {
                 return 'يرجى إدخال البريد الإلكتروني';
               }
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}')
-                  .hasMatch(value)) {
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}').hasMatch(value)) {
                 return 'البريد الإلكتروني غير صالح';
               }
               return null;
@@ -268,22 +271,11 @@ class _LoginFormState extends State<LoginForm> {
                 },
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: selectedRole,
-            decoration: const InputDecoration(
-              labelText: "الدور",
-              prefixIcon: Icon(Icons.person, color: Colors.black54),
-            ),
-            items: const [
-              DropdownMenuItem(value: 'admin', child: Text('مدير')),
-              DropdownMenuItem(value: 'receptionist', child: Text('موظف استقبال')),
-            ],
-            onChanged: (value) {
-              setState(() {
-                selectedRole = value!;
-              });
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'يرجى إدخال كلمة المرور';
+              }
+              return null;
             },
           ),
           const SizedBox(height: 24),

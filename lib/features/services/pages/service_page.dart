@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:vera_clinic/features/services/helper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/custom_toast.dart';
 import '../../departments/cubit/show_departments/show_departments_cubit.dart';
@@ -117,11 +119,12 @@ class _ServicesPageState extends State<ServicesPage> {
                         color: Colors.grey[300],
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: (selectedImage != null)
-                          ? Image.file(selectedImage!, fit: BoxFit.cover)
-                          : (imageBytes != null)
-                          ? Image.memory(imageBytes!, fit: BoxFit.cover)
-                          : const Icon(Icons.camera_alt, size: 40),
+                      child: buildServiceImage(
+                        file: selectedImage,
+                        bytes: imageBytes,
+                        url: null,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ],
@@ -178,9 +181,7 @@ class _ServicesPageState extends State<ServicesPage> {
         content: SingleChildScrollView(
           child: Column(
             children: [
-              service.imageUrl != null
-                  ? Image.network(service.imageUrl!, height: 150, fit: BoxFit.cover)
-                  : const Icon(Icons.image, size: 100, color: Colors.grey),
+              buildServiceImage(url: service.imageUrl, height: 150, fit: BoxFit.cover),
               const SizedBox(height: 10),
               Text(service.description ?? "لا يوجد وصف"),
               const SizedBox(height: 10),
@@ -290,7 +291,6 @@ class _ServicesPageState extends State<ServicesPage> {
                       itemCount: services.length,
                       itemBuilder: (ctx, i) {
                         final s = services[i];
-                        final imageUrl = s.imageUrl ?? '';
                         return GestureDetector(
                           onTap: () => _showServiceDetails(s),
                           child: Card(
@@ -302,14 +302,9 @@ class _ServicesPageState extends State<ServicesPage> {
                                 Expanded(
                                   child: ClipRRect(
                                     borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                                    child: imageUrl.isNotEmpty
-                                        ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(
-                                      color: Colors.grey[300],
-                                      child: const Icon(Icons.camera_alt, size: 40, color: Colors.white70),
-                                    ))
-                                        : Container(
-                                      color: Colors.grey[300],
-                                      child: const Icon(Icons.camera_alt, size: 40, color: Colors.white70),
+                                    child: buildServiceImage(
+                                      url: s.imageUrl,
+                                      fit: BoxFit.cover,
                                     ),
                                   ),
                                 ),

@@ -50,7 +50,7 @@ class _OffersPageState extends State<OffersPage>
     )..forward();
 
     /// جلب العروض عند الدخول
-    context.read<OffersCubit>().loadOffers();
+    context.read<offer_cubit>().loadOffers();
   }
 
   @override
@@ -61,7 +61,7 @@ class _OffersPageState extends State<OffersPage>
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<OffersCubit, OffersState>(
+    return BlocConsumer<offer_cubit, offer_state>(
       listener: (context, state) {
         if (state.successMessage != null) {
           showCustomToast(context, state.successMessage!, success: true);
@@ -98,7 +98,7 @@ class _OffersPageState extends State<OffersPage>
                       ],
                       onChanged: (value) {
                         if (value != null) {
-                          context.read<OffersCubit>().setFilter(value);
+                          context.read<offer_cubit>().setFilter(value);
                           _controller..reset()..forward();
                         }
                       },
@@ -107,7 +107,7 @@ class _OffersPageState extends State<OffersPage>
                   const Spacer(),
                   ElevatedButton.icon(
                     onPressed: () async {
-                      final newOffer = await Navigator.push<Offer>(
+                      final newOffer = await Navigator.push<offersModel>(
                         context,
                         MaterialPageRoute(
                           builder: (_) => BlocProvider.value(
@@ -117,7 +117,7 @@ class _OffersPageState extends State<OffersPage>
                         ),
                       );
                       if (newOffer != null) {
-                        context.read<OffersCubit>().addOffer(newOffer);
+                        context.read<offer_cubit>().addOffer(newOffer);
                         _controller..reset()..forward();
                       }
                     },
@@ -153,10 +153,10 @@ class _OffersPageState extends State<OffersPage>
                           begin: const Offset(0, 0.1),
                           end: Offset.zero,
                         ).animate(animation),
-                        child: OfferCard(
+                        child: offers_card(
                           offer: offer,
                           onEdit: () async {
-                            final updated = await Navigator.push<Offer>(
+                            final updated = await Navigator.push<offersModel>(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => BlocProvider.value(
@@ -166,7 +166,7 @@ class _OffersPageState extends State<OffersPage>
                               ),
                             );
                             if (updated != null) {
-                              context.read<OffersCubit>().updateOffer(updated);
+                              context.read<offer_cubit>().updateOffer(updated);
                             }
                           },
                           onDelete: () async {
@@ -174,7 +174,7 @@ class _OffersPageState extends State<OffersPage>
                                 context, 'تأكيد الحذف', 'هل أنت متأكد من حذف العرض؟');
                             if (confirm == true) {
 
-                              context.read<OffersCubit>().deleteOffer(offer.id);
+                              context.read<offer_cubit>().deleteOffer(offer.id);
                               print("doneeee");
                             }
                           },

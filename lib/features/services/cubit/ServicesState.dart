@@ -1,4 +1,5 @@
-import '../models/service.dart';
+
+import 'package:vera_clinic/features/services/models/service.dart';
 
 abstract class ServicesState {}
 
@@ -23,5 +24,7 @@ class ServicesError extends ServicesState {
 
 class ServiceActionSuccess extends ServicesState {
   final String message;
-  ServiceActionSuccess(this.message);
+  final Service? service;
+
+  ServiceActionSuccess(this.message, {this.service});
 }

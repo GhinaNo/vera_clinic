@@ -25,6 +25,7 @@ class ClientCubit extends Cubit<ClientState> {
   final ClientRepository repository;
   ClientCubit({required this.repository}) : super(ClientInitial());
 
+  /// ---------------- جلب العملاء ----------------
   Future<void> fetchClients() async {
     print('Cubit: fetchClients بدأ');
     emit(ClientLoading('جارٍ تحميل العملاء...'));
@@ -38,6 +39,7 @@ class ClientCubit extends Cubit<ClientState> {
     }
   }
 
+  /// ---------------- جلب عميل واحد ----------------
   Future<void> showClient(int id) async {
     print('Cubit: showClient ID=$id');
     emit(ClientLoading('جارٍ تحميل تفاصيل العميل...'));
@@ -51,13 +53,13 @@ class ClientCubit extends Cubit<ClientState> {
     }
   }
 
+  /// ---------------- إضافة عميل ----------------
   Future<void> addClient(Client client) async {
     print('Cubit: addClient ${client.name}');
     emit(ClientLoading('جارٍ إضافة العميل...'));
     try {
-      final newClient = await repository.addClient(client);
-      final current = state is ClientLoaded ? (state as ClientLoaded).clients : [];
-      emit(ClientLoaded([...current, newClient]));
+      await repository.addClient(client);
+      await fetchClients(); // ✅ ريفرش بعد الإضافة
       print('Cubit: addClient تم بنجاح');
     } catch (e) {
       print('Cubit: addClient فشل $e');
@@ -65,22 +67,21 @@ class ClientCubit extends Cubit<ClientState> {
     }
   }
 
+  /// ---------------- تبديل حالة العميل ----------------
   Future<void> toggleStatus(int id) async {
-    if (state is! ClientLoaded) return;
-    final clients = (state as ClientLoaded).clients;
-    final updated = clients.map((c) {
-      if (c.id == id) return c.copyWith(isActive: !c.isActive);
-      return c;
-    }).toList();
-    emit(ClientLoaded(updated));
+    print('Cubit: toggleStatus ID=$id');
+    emit(ClientLoading('جارٍ تبديل حالة العميل...'));
     try {
       await repository.toggleStatus(id);
+      await fetchClients(); // ✅ ريفرش بعد تبديل الحالة
+      print('Cubit: toggleStatus تم بنجاح');
     } catch (e) {
       print('Cubit: toggleStatus فشل $e');
-      emit(ClientLoaded(clients));
+      emit(ClientError('فشل تبديل حالة العميل'));
     }
   }
 
+  /// ---------------- البحث عن العملاء ----------------
   Future<void> searchClient(String query) async {
     print('Cubit: searchClient بدأ للبحث عن "$query"');
     emit(ClientLoading('جارٍ البحث عن العملاء...'));

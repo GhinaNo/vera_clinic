@@ -9,7 +9,7 @@ import '../model/offersModel.dart';
 import 'SelectServicesPage.dart';
 
 class AddOrEditOfferPage extends StatefulWidget {
-  final Offer? offer;
+  final offersModel? offer;
 
   const AddOrEditOfferPage({super.key, this.offer});
 
@@ -80,14 +80,16 @@ class _AddOrEditOfferPageState extends State<AddOrEditOfferPage> {
       return;
     }
 
-    final newOffer = Offer(
+    final newOffer = offersModel(
       id: widget.offer?.id ?? UniqueKey().toString(),
       title: titleController.text.trim(),
       discountPercent: discountPercent,
       startDate: startDate!,
       endDate: endDate!,
+      isActive: true,
       services: selectedServices,
     );
+
 
     Navigator.pop(context, newOffer);
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:vera_clinic/features/waleed/invo.dart';
 import '../../core/services/token_storage.dart';
 import '../../core/theme/app_theme.dart';
 import '../auth/cubit/log_out/logout_cubit.dart';
@@ -17,11 +18,13 @@ import '../offers/cubit/offer_cubit.dart';
 import '../offers/model/offers_repository.dart';
 import '../offers/pages/offers_page.dart';
 import '../services/cubit/ServicesCubit.dart';
-import '../services/models/ServicesRepository.dart';
+import '../services/models/services_repository.dart .dart';
 import '../services/pages/service_page.dart';
 import '../statistics/cubit/statistics_cubit.dart';
 import '../statistics/page/statistics_page.dart';
 import '../statistics/repository/statistics_repository.dart';
+import '../waleed/book_page.dart';
+import '../waleed/noti.dart';
 
 class DashboardPage extends StatefulWidget {
   final String role;
@@ -43,7 +46,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   late ShowDepartmentsCubit _departmentsCubit;
   late ServicesCubit _servicesCubit;
-  late OffersCubit _offersCubit;
+  late offer_cubit _offersCubit;
   late StatisticsCubit _statisticsCubit;
   late EmployeeCubit _employeeCubit;
   late ClientCubit _clientCubit;
@@ -59,9 +62,8 @@ class _DashboardPageState extends State<DashboardPage> {
         'الأقسام',
         'الخدمات',
         'العروض',
-        'المحاسبة',
+        'الفواتير',
         'العملاء',
-        'المواعيد',
         'الحجوزات',
         'الموظفون',
         'الإشعارات',
@@ -75,7 +77,6 @@ class _DashboardPageState extends State<DashboardPage> {
         Icons.account_balance_wallet_outlined,
         Icons.person_outline,
         Icons.calendar_month_outlined,
-        Icons.book_online_outlined,
         Icons.people_alt_outlined,
         Icons.notifications_outlined,
         Icons.logout,
@@ -84,9 +85,8 @@ class _DashboardPageState extends State<DashboardPage> {
       allowedTitles = [
         'الأقسام',
         'الخدمات',
-        'المحاسبة',
+        'الفواتير',
         'العملاء',
-        'المواعيد',
         'الحجوزات',
         'الإشعارات',
         'تسجيل الخروج',
@@ -97,7 +97,6 @@ class _DashboardPageState extends State<DashboardPage> {
         Icons.account_balance_wallet_outlined,
         Icons.person_outline,
         Icons.calendar_month_outlined,
-        Icons.book_online_outlined,
         Icons.notifications_outlined,
         Icons.logout,
       ];
@@ -111,15 +110,14 @@ class _DashboardPageState extends State<DashboardPage> {
       repository: ServicesRepository(token: widget.token),
     )..fetchServices();
 
-    _offersCubit = OffersCubit(
-      repository: OffersRepository(token: widget.token),
+    _offersCubit = offer_cubit(
+      repository: offers_repository(token: widget.token),
     );
 
     _statisticsCubit = StatisticsCubit(StatisticsRepository());
 
-    _employeeCubit = EmployeeCubit()..fetchEmployees(
-      extraHeaders: {'Authorization': 'Bearer ${widget.token}'},
-    );
+    _employeeCubit = EmployeeCubit()..fetchEmployees();
+
 
     _clientCubit = ClientCubit(
       repository: ClientRepository(token: widget.token),
@@ -166,6 +164,12 @@ class _DashboardPageState extends State<DashboardPage> {
             value: _clientCubit,
             child: ClientPage(cubit: _clientCubit),
           );
+        case 'الحجوزات':
+          return   BookingPage(token: widget.token);
+        case 'الإشعارات':
+          return   NotificationsPage(token: widget.token);
+        case 'الفواتير':
+          return InvoicePage(token: widget.token,);
         case 'تسجيل الخروج':
           return _buildLogoutPage();
         default:

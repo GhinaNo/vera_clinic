@@ -2,20 +2,20 @@ import '../model/offersModel.dart';
 
 enum OffersFilter { all, active, expired }
 
-class OffersState {
-  final List<Offer> offers;
+class offer_state {
+  final List<offersModel> offers;
   final OffersFilter filter;
   final String? successMessage;
   final String? errorMessage;
 
-  OffersState({
+  offer_state({
     required this.offers,
     this.filter = OffersFilter.all,
     this.successMessage,
     this.errorMessage,
   });
 
-  List<Offer> get filteredOffers {
+  List<offersModel> get filteredOffers {
     final now = DateTime.now();
     switch (filter) {
       case OffersFilter.active:
@@ -28,13 +28,13 @@ class OffersState {
     }
   }
 
-  OffersState copyWith({
-    List<Offer>? offers,
+  offer_state copyWith({
+    List<offersModel>? offers,
     OffersFilter? filter,
     String? successMessage,
     String? errorMessage,
   }) {
-    return OffersState(
+    return offer_state(
       offers: offers ?? this.offers,
       filter: filter ?? this.filter,
       successMessage: successMessage,

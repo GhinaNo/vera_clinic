@@ -3,7 +3,7 @@ class UserModel {
   final int id;
   final String name;
   final String? role;
-  final String status; // "active" أو "blocked"
+  final String status;
   final String email;
 
   UserModel({
@@ -36,7 +36,6 @@ class UserModel {
       name: json['name'],
       role: json['role'],
       email: json['email'],
-      // تعديل لاستيعاب is_active من الباك
       status: (json['is_active'] == 1) ? 'active' : 'blocked',
     );
   }

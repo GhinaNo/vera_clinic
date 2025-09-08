@@ -13,54 +13,65 @@ class AuthException implements Exception {
 }
 
 class AuthRepository {
-
   /// تسجيل الدخول
   Future<LoginResponse> login({
     required String email,
     required String password,
-    required String role,
   }) async {
-    final url = role == 'admin'
-        ? ApiConstants.adminLoginUrl()
-        : ApiConstants.receptionistLoginUrl();
-
     print('--- LOGIN REQUEST ---');
-    print('URL: $url');
     print('Email: $email');
-    print('Role: $role');
 
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      final responseAdmin = await http.post(
+        Uri.parse(ApiConstants.adminLoginUrl()),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: jsonEncode({'email': email, 'password': password}),
       );
 
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
-      print('---------------------');
+      print('Admin Status: ${responseAdmin.statusCode}');
+      print('Admin Response: ${responseAdmin.body}');
 
-      final data = json.decode(response.body);
+      final dataAdmin = json.decode(responseAdmin.body);
 
-      if (response.statusCode == 200) {
-        return LoginResponse.fromJson(data);
-      } else {
-        final serverMsg = data['message'] ?? "فشل تسجيل الدخول";
-
-        String userMessage;
-        switch (serverMsg.toLowerCase()) {
-          case "invalid email or password":
-            userMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة";
-            break;
-          case "user not found":
-            userMessage = "المستخدم غير موجود";
-            break;
-          default:
-            userMessage = "حدث خطأ أثناء تسجيل الدخول";
-        }
-
-        throw AuthException(userMessage);
+      if (responseAdmin.statusCode == 200 &&
+          dataAdmin['status'] == 1 &&
+          dataAdmin['data'] != null) {
+        final loginResponse = LoginResponse.fromJson(dataAdmin);
+        print("🚀 ROLE (admin login): ${loginResponse.role}");
+        return loginResponse;
       }
+
+      // إذا فشل admin، جرب receptionist login
+      final responseReceptionist = await http.post(
+        Uri.parse(ApiConstants.receptionistLoginUrl()),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: jsonEncode({'email': email, 'password': password}),
+      );
+
+      print('Receptionist Status: ${responseReceptionist.statusCode}');
+      print('Receptionist Response: ${responseReceptionist.body}');
+
+      final dataReceptionist = json.decode(responseReceptionist.body);
+
+      if (responseReceptionist.statusCode == 200 &&
+          dataReceptionist['status'] == 1 &&
+          dataReceptionist['data'] != null) {
+        final loginResponse = LoginResponse.fromJson(dataReceptionist);
+        print("🚀 ROLE (receptionist login): ${loginResponse.role}");
+        return loginResponse;
+      }
+
+      // إذا الاثنين فشلوا
+      final msg = dataReceptionist['message'] ??
+          dataAdmin['message'] ??
+          "فشل تسجيل الدخول";
+      throw AuthException(msg);
     } catch (e) {
       print('Login Error: $e');
       if (e.toString().contains("SocketException")) {
@@ -73,26 +84,26 @@ class AuthRepository {
     }
   }
 
-  ///تسجيل الخروج
-  Future<void> logout() async{
+
+  /// تسجيل الخروج
+  Future<void> logout() async {
     final url = ApiConstants.logoutUrl();
     final token = await TokenStorage.getToken();
-    
+
     print('Logout URL: $url');
     print('Logout Token Exists: ${token != null}');
 
     if (token == null || token.isEmpty) {
-      // لا يوجد توكن اصلاً: اعتبر الجلسة منتهية
       throw Exception('no_token');
     }
-    
-    try{
+
+    try {
       final response = await http.post(
         Uri.parse(url),
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
-        }
+        },
       );
 
       print('Logout Status Code: ${response.statusCode}');
@@ -113,7 +124,6 @@ class AuthRepository {
     }
   }
 
-
   /// نسيت كلمة المرور
   Future<String> forgetPassword(String email) async {
     final url = ApiConstants.forgetPasswordUrl();
@@ -125,7 +135,10 @@ class AuthRepository {
     try {
       final response = await http.post(
         Uri.parse(url),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: jsonEncode({'email': email}),
       );
 
@@ -135,19 +148,12 @@ class AuthRepository {
 
       final data = json.decode(response.body);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return "تم إرسال رمز إعادة تعيين كلمة المرور إلى بريدك الإلكتروني";
+      if (response.statusCode == 200) {
+        return data['message'] ??
+            "تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني";
       } else {
-        final serverMsg = data['message'] ?? "";
-        String userMessage;
-
-        if (serverMsg.toLowerCase().contains("not found") || serverMsg.toLowerCase().contains("email")) {
-          userMessage = "البريد الإلكتروني غير صحيح";
-        } else {
-          userMessage = "حدث خطأ أثناء إرسال رمز إعادة التعيين";
-        }
-
-        throw AuthException(userMessage);
+        throw AuthException(
+            data['message'] ?? "حدث خطأ أثناء إرسال رابط إعادة التعيين");
       }
     } catch (e) {
       print('ForgetPassword Error: $e');
@@ -171,7 +177,10 @@ class AuthRepository {
     try {
       final response = await http.post(
         Uri.parse(url),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: jsonEncode({'code': code}),
       );
 
@@ -182,18 +191,10 @@ class AuthRepository {
       final data = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        return "الكود صحيح";
+        return data['message'] ?? "الكود صحيح";
       } else {
-        final serverMsg = data['message'] ?? "";
-        String userMessage;
-
-        if (serverMsg.toLowerCase().contains("invalid code") || serverMsg.toLowerCase().contains("the selected code is invalid")) {
-          userMessage = "الكود الذي أدخلته غير صحيح";
-        } else {
-          userMessage = "حدث خطأ أثناء التحقق من الكود";
-        }
-
-        throw AuthException(userMessage);
+        throw AuthException(
+            data['message'] ?? "الكود الذي أدخلته غير صحيح");
       }
     } catch (e) {
       print('CheckCode Error: $e');
@@ -221,7 +222,10 @@ class AuthRepository {
     try {
       final response = await http.post(
         Uri.parse(url),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: jsonEncode({
           'code': code,
           'password': password,
@@ -236,20 +240,10 @@ class AuthRepository {
       final data = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        return "تم تغيير كلمة المرور بنجاح";
+        return data['message'] ?? "تم تغيير كلمة المرور بنجاح";
       } else {
-        final serverMsg = data['message'] ?? "";
-        String userMessage;
-
-        if (serverMsg.toLowerCase().contains("invalid code")) {
-          userMessage = "الكود غير صالح لإعادة التعيين";
-        } else if (serverMsg.toLowerCase().contains("password")) {
-          userMessage = "حدث خطأ أثناء تغيير كلمة المرور";
-        } else {
-          userMessage = "حدث خطأ أثناء إعادة تعيين كلمة المرور";
-        }
-
-        throw AuthException(userMessage);
+        throw AuthException(
+            data['message'] ?? "حدث خطأ أثناء إعادة تعيين كلمة المرور");
       }
     } catch (e) {
       print('ResetPassword Error: $e');

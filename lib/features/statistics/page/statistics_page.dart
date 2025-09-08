@@ -252,7 +252,6 @@ class _GradientCardState extends State<GradientCard> {
     );
   }
 }
-
 class DonutChartWithPercentage extends StatefulWidget {
   final Map<String, double> popularServices;
   static const colors = [
@@ -275,12 +274,22 @@ class _DonutChartWithPercentageState extends State<DonutChartWithPercentage> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.popularServices.isEmpty) return const SizedBox(height: 200);
+    if (widget.popularServices.isEmpty) {
+      return const Center(
+        child: Text("لا توجد بيانات", style: TextStyle(fontFamily: "Tajawal")),
+      );
+    }
 
     final sortedServices = widget.popularServices.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final topService = sortedServices.first.key;
-    final total = widget.popularServices.values.reduce((a, b) => a + b);
+
+    final total = widget.popularServices.values.fold<double>(0, (a, b) => a + b);
+    if (total == 0) {
+      return const Center(
+        child: Text("لا توجد بيانات لعرضها", style: TextStyle(fontFamily: "Tajawal")),
+      );
+    }
 
     return Stack(
       alignment: Alignment.center,

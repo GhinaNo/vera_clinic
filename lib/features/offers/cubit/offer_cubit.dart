@@ -3,10 +3,10 @@ import '../model/offersModel.dart';
 import '../model/offers_repository.dart';
 import 'offer_state.dart';
 
-class OffersCubit extends Cubit<OffersState> {
-  final OffersRepository repository;
+class offer_cubit extends Cubit<offer_state> {
+  final offers_repository repository;
 
-  OffersCubit({required this.repository}) : super(OffersState(offers: []));
+  offer_cubit({required this.repository}) : super(offer_state(offers: []));
 
   Future<void> loadOffers({String status = 'all'}) async {
     try {
@@ -17,7 +17,7 @@ class OffersCubit extends Cubit<OffersState> {
     }
   }
 
-  Future<void> addOffer(Offer offer) async {
+  Future<void> addOffer(offersModel offer) async {
     try {
       final added = await repository.addOffer(offer);
       final updatedList = [added, ...state.offers];
@@ -30,7 +30,7 @@ class OffersCubit extends Cubit<OffersState> {
     }
   }
 
-  Future<void> updateOffer(Offer offer) async {
+  Future<void> updateOffer(offersModel offer) async {
     try {
       final updated = await repository.updateOffer(offer);
       final updatedList = state.offers.map((o) => o.id == updated.id ? updated : o).toList();

@@ -221,10 +221,7 @@ class _EmployeePageState extends State<EmployeePage> {
                                                 if (confirm != true) return;
 
                                                 final cubit = context.read<EmployeeCubit>();
-                                                await cubit.toggleArchiveEmployee(
-                                                  id: emp.id,
-                                                  isArchiveMode: isArchiveMode,
-                                                );
+                                                await cubit.toggleArchiveEmployee(id: emp.id);
 
                                                 if (isArchiveMode) {
                                                   cubit.fetchArchivedEmployees();
@@ -261,16 +258,20 @@ class _EmployeePageState extends State<EmployeePage> {
                                                   if (confirm != true) return;
 
                                                   final cubit = context.read<EmployeeCubit>();
-                                                  await cubit.toggleStatusEmployee(employeeId: emp.id);
+                                                  await cubit.toggleStatusEmployee(userId: emp.user.id);
+
+                                                  // الحالة الجديدة بعد التحديث
+                                                  final newStatus = emp.user.status == 'blocked' ? 'active' : 'blocked';
 
                                                   showCustomToast(
                                                     context,
-                                                    emp.user.status == 'blocked' ? 'تم تفعيل الموظف بنجاح' : 'تم حظر الموظف بنجاح',
+                                                    newStatus == 'blocked'
+                                                        ? 'تم حظر الموظف بنجاح'
+                                                        : 'تم تفعيل الموظف بنجاح',
                                                     success: true,
                                                   );
                                                 },
                                               ),
-
                                           ],
                                         ),
                                       ],

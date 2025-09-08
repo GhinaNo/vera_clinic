@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../model/offersModel.dart';
 
-class OfferCard extends StatelessWidget {
-  final Offer offer;
+class offers_card extends StatelessWidget {
+  final offersModel offer;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  const OfferCard({
+  const offers_card({
     super.key,
     required this.offer,
     required this.onEdit,

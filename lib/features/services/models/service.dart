@@ -1,3 +1,5 @@
+import '../../../core/constant/ApiConstants.dart';
+
 class Service {
   final int id;
   final String name;
@@ -6,7 +8,9 @@ class Service {
   final int duration;
   final int departmentId;
   final String? imageUrl;
-  final double? discountedPrice; // موجود فقط لو جاي من pivot (عروض)
+  final String? createdAt;
+  final String? updatedAt;
+  final double? discountedPrice;
 
   Service({
     required this.id,
@@ -16,33 +20,41 @@ class Service {
     required this.duration,
     required this.departmentId,
     this.imageUrl,
+    this.createdAt,
+    this.updatedAt,
     this.discountedPrice,
   });
 
   factory Service.fromJson(Map<String, dynamic> json) {
     return Service(
-      id: json['id'] is String ? int.parse(json['id']) : json['id'],
+      id: int.tryParse(json['id'].toString()) ?? 0,
       name: json['name'] ?? '',
       description: json['description'],
       price: double.tryParse(json['price'].toString()) ?? 0.0,
       duration: int.tryParse(json['duration'].toString()) ?? 0,
-      departmentId: json['department_id'] is String
-          ? int.tryParse(json['department_id']) ?? 0
-          : json['department_id'] ?? 0,
-      imageUrl: json['image'], // بالباك إند بيرجع رابط كامل ✔
+      departmentId: int.tryParse(json['department_id'].toString()) ?? 0,
+      imageUrl: (json['image'] != null && json['image'].toString().isNotEmpty)
+          ? (json['image'].toString().startsWith('http')
+          ? json['image']
+          : "${ApiConstants.baseUrl}/storage/${json['image']}")
+          : null,
+      createdAt: json['created_at'],
+      updatedAt: json['updated_at'],
       discountedPrice: json['pivot']?['discounted_price'] != null
           ? double.tryParse(json['pivot']['discounted_price'].toString())
           : null,
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'description': description,
-    'price': price,
-    'duration': duration,
-    'department_id': departmentId,
-    'image': imageUrl,
-  };
+  Map<String, dynamic> toJson() {
+    return {
+      "id": id,
+      "name": name,
+      "description": description,
+      "price": price.toString(),
+      "duration": duration.toString(),
+      "department_id": departmentId.toString(),
+      "image": imageUrl,
+    };
+  }
 }

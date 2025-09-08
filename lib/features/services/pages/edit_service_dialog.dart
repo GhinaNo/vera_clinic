@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,6 +12,7 @@ import '../../departments/cubit/show_departments/show_departments_state.dart';
 import '../../departments/models/department.dart';
 import '../cubit/ServicesCubit.dart';
 import '../cubit/ServicesState.dart';
+import '../helper.dart';
 import '../models/service.dart';
 
 class EditServiceDialog extends StatefulWidget {
@@ -63,9 +64,16 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
             key: formKey,
             child: Column(
               children: [
-                TextFormField(controller: nameController, decoration: const InputDecoration(labelText: "اسم الخدمة"), validator: (val) => val!.isEmpty ? "مطلوب" : null),
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: "اسم الخدمة"),
+                  validator: (val) => val!.isEmpty ? "مطلوب" : null,
+                ),
                 const SizedBox(height: 12),
-                TextFormField(controller: descController, decoration: const InputDecoration(labelText: "الوصف")),
+                TextFormField(
+                  controller: descController,
+                  decoration: const InputDecoration(labelText: "الوصف"),
+                ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: priceController,
@@ -79,22 +87,37 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
                   },
                 ),
                 const SizedBox(height: 12),
+
+                /// Dropdown مع دعم قيم الباك
                 DropdownButtonFormField<int>(
                   value: duration,
                   decoration: const InputDecoration(labelText: "المدة"),
-                  items: [15, 30, 45, 60, 90, 120].map((e) => DropdownMenuItem(value: e, child: Text("$e دقيقة"))).toList(),
+                  items: [
+                    15, 30, 45, 60, 90, 120,
+                    if (duration != null && ![15, 30, 45, 60, 90, 120].contains(duration))
+                      duration!
+                  ]
+                      .map((e) =>
+                      DropdownMenuItem(value: e, child: Text("$e دقيقة")))
+                      .toList(),
                   onChanged: (val) => setState(() => duration = val),
                   validator: (val) => val == null ? "اختر المدة" : null,
                 ),
+
                 const SizedBox(height: 12),
                 BlocBuilder<ShowDepartmentsCubit, ShowDepartmentsState>(
                   builder: (context, state) {
                     List<Department> departments = [];
-                    if (state is ShowDepartmentsSuccess) departments = state.departments;
+                    if (state is ShowDepartmentsSuccess) {
+                      departments = state.departments;
+                    }
                     return DropdownButtonFormField<String>(
                       value: departmentId,
                       decoration: const InputDecoration(labelText: "القسم"),
-                      items: departments.map((d) => DropdownMenuItem(value: d.id.toString(), child: Text(d.name))).toList(),
+                      items: departments
+                          .map((d) => DropdownMenuItem(
+                          value: d.id.toString(), child: Text(d.name)))
+                          .toList(),
                       onChanged: (val) => setState(() => departmentId = val),
                       validator: (val) => val == null ? "اختر القسم" : null,
                     );
@@ -103,18 +126,30 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
                 const SizedBox(height: 12),
                 GestureDetector(
                   onTap: () async {
-                    final XFile? picked = await picker.pickImage(source: ImageSource.gallery);
+                    final XFile? picked =
+                    await picker.pickImage(source: ImageSource.gallery);
                     if (picked != null) {
-                      if (kIsWeb) newImageBytes = await picked.readAsBytes();
-                      else newImage = File(picked.path);
+                      if (kIsWeb) {
+                        newImageBytes = await picked.readAsBytes();
+                      } else {
+                        newImage = File(picked.path);
+                      }
                       setState(() {});
                     }
                   },
                   child: Container(
                     width: double.infinity,
                     height: 120,
-                    decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
-                    child: _buildImagePreview(),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: buildServiceImage(
+                      file: newImage,
+                      bytes: newImageBytes,
+                      url: widget.service.imageUrl,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ],
@@ -122,7 +157,9 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("إلغاء")),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("إلغاء")),
           ElevatedButton(
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
@@ -134,8 +171,15 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
                   title: const Text("تأكيد الحفظ"),
                   content: const Text("هل تريد حفظ التعديلات؟"),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("إلغاء")),
-                    ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.purple), child: const Text("حفظ", style: TextStyle(color: AppColors.offWhite))),
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text("إلغاء")),
+                    ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.purple),
+                        child: const Text("حفظ",
+                            style: TextStyle(color: AppColors.offWhite))),
                   ],
                 ),
               );
@@ -152,22 +196,17 @@ class _EditServiceDialogState extends State<EditServiceDialog> {
                   widget.service.id,
                   data,
                   image: (!kIsWeb && newImage != null) ? newImage : null,
-                  imageBytes: (kIsWeb && newImageBytes != null) ? newImageBytes : null,
+                  imageBytes:
+                  (kIsWeb && newImageBytes != null) ? newImageBytes : null,
                 );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
-            child: const Text("حفظ", style: TextStyle(color: AppColors.offWhite)),
+            child: const Text("حفظ",
+                style: TextStyle(color: AppColors.offWhite)),
           ),
         ],
       ),
     );
-  }
-
-  Widget _buildImagePreview() {
-    if (newImage != null) return Image.file(newImage!, fit: BoxFit.cover);
-    if (newImageBytes != null) return Image.memory(newImageBytes!, fit: BoxFit.cover);
-    if (widget.service.imageUrl != null && widget.service.imageUrl!.startsWith('http')) return Image.network(widget.service.imageUrl!, fit: BoxFit.cover);
-    return const Icon(Icons.camera_alt);
   }
 }

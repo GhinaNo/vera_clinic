@@ -3,10 +3,10 @@ import 'package:http/http.dart' as http;
 import '../../../core/constant/ApiConstants.dart';
 import 'offersModel.dart';
 
-class OffersRepository {
+class offers_repository {
   final String token;
 
-  OffersRepository({required this.token});
+  offers_repository({required this.token});
 
   Map<String, String> get _headers => {
     'Accept': 'application/json',
@@ -14,8 +14,7 @@ class OffersRepository {
     'Content-Type': 'application/json',
   };
 
-  // جلب كل العروض
-  Future<List<Offer>> fetchOffers({String status = 'all'}) async {
+  Future<List<offersModel>> fetchOffers({String status = 'all'}) async {
     final url = Uri.parse(ApiConstants.showOffersUrl());
     print('Fetching offers with status: $status from $url');
 
@@ -33,7 +32,7 @@ class OffersRepository {
       if (data['status'] == 1) {
         final List offers = data['data'] ?? [];
         print('Fetched ${offers.length} offers successfully');
-        return offers.map((json) => Offer.fromJson(json)).toList();
+        return offers.map((json) => offersModel.fromJson(json)).toList();
       } else {
         print('Failed to fetch offers: ${data['message']}');
         throw Exception(data['message'] ?? 'Failed to fetch offers');
@@ -44,8 +43,7 @@ class OffersRepository {
     }
   }
 
-  // جلب عرض واحد
-  Future<Offer> fetchOfferById(String id) async {
+  Future<offersModel> fetchOfferById(String id) async {
     final url = Uri.parse(ApiConstants.showOfferUrl(int.parse(id)));
     print('Fetching offer with ID: $id from $url');
 
@@ -57,7 +55,7 @@ class OffersRepository {
       final data = jsonDecode(response.body);
       if (data['status'] == 1) {
         print('Offer fetched successfully: ${data['data']}');
-        return Offer.fromJson(data['data']);
+        return offersModel.fromJson(data['data']);
       } else {
         print('Failed to fetch offer: ${data['message']}');
         throw Exception(data['message'] ?? 'Failed to fetch offer');
@@ -69,7 +67,7 @@ class OffersRepository {
   }
 
   // إضافة عرض
-  Future<Offer> addOffer(Offer offer) async {
+  Future<offersModel> addOffer(offersModel offer) async {
     final url = Uri.parse(ApiConstants.addOfferUrl());
     print('Adding new offer: ${offer.toJson()} to $url');
 
@@ -82,7 +80,7 @@ class OffersRepository {
       final data = jsonDecode(response.body);
       if (data['status'] == 1) {
         print('Offer added successfully: ${data['data']}');
-        return Offer.fromJson(data['data']);
+        return offersModel.fromJson(data['data']);
       } else {
         print('Failed to add offer: ${data['message']}');
         throw Exception(data['message'] ?? 'Failed to add offer');
@@ -94,7 +92,7 @@ class OffersRepository {
   }
 
   // تحديث عرض
-  Future<Offer> updateOffer(Offer offer) async {
+  Future<offersModel> updateOffer(offersModel offer) async {
     final url = Uri.parse(ApiConstants.updateOfferUrl(int.parse(offer.id)));
     print('Updating offer: ${offer.toJson()} at $url');
 
@@ -107,7 +105,7 @@ class OffersRepository {
       final data = jsonDecode(response.body);
       if (data['status'] == 1) {
         print('Offer updated successfully: ${data['data']}');
-        return Offer.fromJson(data['data']);
+        return offersModel.fromJson(data['data']);
       } else {
         print('Failed to update offer: ${data['message']}');
         throw Exception(data['message'] ?? 'Failed to update offer');

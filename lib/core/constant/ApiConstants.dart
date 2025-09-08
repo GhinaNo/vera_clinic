@@ -22,6 +22,18 @@ class ApiConstants {
   static String toggleUserStatusUrl(int id) => '$baseUrl/web/users/$id/toggle-status';
   static String searchUserUrl() => '$baseUrl/web/search-user';
 
+  //employee
+  static String showEmployeesUrl() => '$baseUrl/web/admin/employees';
+  static String addEmployeeUrl() => '$baseUrl/web/admin/employees';
+  static String updateEmployeeUrl(int id) =>
+      '$baseUrl/web/admin/employees/$id';
+  static String searchEmployeeUrl() =>
+      '$baseUrl/web/admin/employees/search';
+  static String toggleArchiveEmployeeUrl(int id) =>
+      '$baseUrl/web/admin/employees/$id/toggle-archive';
+  static String showArchivedEmployeesUrl() =>
+      '$baseUrl/web/admin/employees/archives';
+
 
   // Departments
   static String addDepartmentUrl() => '$baseUrl/web/admin/departments';

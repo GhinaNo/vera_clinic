@@ -34,7 +34,6 @@ class ClientsCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // أيقونة زينة
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -45,7 +44,6 @@ class ClientsCard extends StatelessWidget {
             ),
             const SizedBox(width: 20),
 
-            // النصوص والعداد
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,7 +58,6 @@ class ClientsCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
 
-                  // العداد المتحرك
                   Animate(
                     effects: const [FadeEffect(), ScaleEffect()],
                     child: TweenAnimationBuilder(

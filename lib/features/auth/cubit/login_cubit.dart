@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import '../../../core/services/token_storage.dart';
 import '../model/login_response.dart';
 import '../repository/auth_repository.dart';
+
 part 'login_state.dart';
 
 class LoginCubit extends Cubit<LoginState> {
@@ -12,19 +13,15 @@ class LoginCubit extends Cubit<LoginState> {
   Future<void> login({
     required String email,
     required String password,
-    required String role,
   }) async {
     emit(LoginLoading());
     try {
       final loginResponse = await authRepository.login(
         email: email,
         password: password,
-        role: role,
       );
-      await TokenStorage.saveTokenAndRole(
-        loginResponse.token,
-        loginResponse.role,
-      );
+
+      await TokenStorage.saveLoginData(loginResponse);
 
       emit(LoginSuccess(loginResponse));
     } catch (e) {
@@ -36,5 +33,3 @@ class LoginCubit extends Cubit<LoginState> {
     }
   }
 }
-
-
